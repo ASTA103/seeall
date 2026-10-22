@@ -8,7 +8,7 @@
 
    A cada versão nova do app, troque VERSAO abaixo: é isso que faz o navegador baixar a versão nova
    e oferecer "Atualizar" (a página antiga continua funcionando até a pessoa aceitar). */
-const VERSAO = '2.3.45';
+const VERSAO = '2.3.46';
 const CACHE = 'seeall-app-' + VERSAO;
 // o essencial para abrir o app; as bibliotecas grandes (pdf.js, OCR) entram no cache quando forem usadas
 const ESSENCIAL = ['./', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'];

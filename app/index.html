@@ -1068,6 +1068,7 @@ document.documentElement.setAttribute('data-auth','gate');})();
 
   /* Legenda discreta do limite de arquivos (Tela 1) */
   .import-batch-hint{ text-align:center; font-size:11.5px; color:var(--text-faint); margin-top:16px; }
+  .import-cota{ margin-top:6px; } /* (2.3.46) plano e cota do mês */
 
   /* Tela 2 (lote) — cabeçalho com contagem */
   .import-batch-head{ margin:2px 2px 18px; }
@@ -3829,7 +3830,8 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       <button type="button" class="notif-pendentes" id="notif-pendentes-btn" style="display:none;"></button>
       <input type="file" id="import-file-input-doc" accept=".ofx,.csv,.pdf" multiple style="display:none;">
       <input type="file" id="import-file-input-img" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none;">
-      <div class="import-batch-hint">Você pode selecionar até 10 arquivos</div>
+      <div class="import-batch-hint" id="import-batch-hint">Você pode selecionar até 10 arquivos por vez</div><!-- (2.3.46) o número segue o plano -->
+      <div class="import-batch-hint import-cota" id="import-cota" hidden></div><!-- (2.3.46) plano e cota do mês -->
     </div>
 
     <!-- Tela 2: arquivos selecionados (lote de até 5) -->
@@ -3850,6 +3852,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         </button>
       </div>
       <div class="import-batch-limit-msg" id="import-batch-limit-msg" style="display:none;">Você pode importar até 10 arquivos por vez.</div>
+      <div class="import-batch-limit-msg" id="import-batch-cota-msg" hidden></div><!-- (2.3.46) -->
       <button class="import-cta" id="import-process-btn" type="button" style="margin-top:22px;">PROCESSAR ARQUIVO</button>
     </div>
 
@@ -6280,7 +6283,7 @@ function podeDesfazerImportacao(origem){
 
 // (2.3.19) envio voluntário do arquivo que falhou
 const ENVIO_FALHA_BUCKET = 'extratos-falha';
-const ENVIO_FALHA_EMAIL = 'seeall.app@pm.me';
+const ENVIO_FALHA_EMAIL = 'support@seeall.app.br';
 let envioFalhaMotivo = '';
 function abrirEnvioFalha(motivo){
   if(!ultimoArquivoImportado) return;
@@ -8679,7 +8682,7 @@ let importEmAndamento = false; // Passo 21: evita disparar o mesmo processamento
 let currentImportStep = 'choose'; // permite trocar de aba sem perder o progresso da importação
 
 /* ---------- Parte 1 (lote): seleção de até 10 arquivos ---------- */
-const MAX_IMPORT_FILES = 10;
+const MAX_IMPORT_FILES = 10; // (2.3.46) com a cota no servidor, vale o do plano (cotaLimiteDoLote)
 const EXTENSOES_DOC = ['ofx','csv','pdf'];
 const EXTENSOES_IMG = ['png','jpg','jpeg','webp'];
 let importBatch = []; // [{ id, file, kind:'doc'|'img', ext, status, error, transactionCount, stageLabel, rawResult }]
@@ -8712,11 +8715,13 @@ function resetImportFlow(){
   importPendingFile = null;
   importEmAndamento = false;
   importacaoEmFinalizacao = false; // Passo 35: nova sessão de importação libera o botão de novo
+  cotaLiberarReservadas(); // (2.3.46) importação abandonada ou cancelada devolve as vagas
   resetImportBatch();
   const btn = document.getElementById('import-process-btn');
   if(btn) btn.disabled = false;
   showImportStep('choose');
   if(typeof atualizarBotaoPendentesNotif === 'function') atualizarBotaoPendentesNotif();
+  atualizarCotaNaTela(true); // (2.3.46)
 }
 
 /* ---------- Passo 18: mensagens humanas de erro de importação ---------- */
@@ -8776,11 +8781,39 @@ const IMPORT_ERROS = {
   integracao: {
     title: 'Não conseguimos finalizar a importação',
     message: 'Seus dados ainda não foram adicionados.'
+  },
+  // (2.3.46) cota do mês (planos em importacao/cota.js); o arquivo não foi lido e não conta
+  cota_mes: {
+    title: 'Limite do mês atingido',
+    get message(){ return `O plano ${cotaPlano().nome} permite ${cotaLimiteArquivos()} arquivos por mês, e todos já foram usados. O limite volta no dia 1º.`; },
+    lote: 'Limite de arquivos do mês atingido: este arquivo não foi lido.'
+  },
+  cota_paginas: {
+    title: 'Arquivo com páginas demais',
+    get message(){
+      const n = cotaUltimoBloqueio && cotaUltimoBloqueio.paginas;
+      return `${n ? `Este PDF tem ${n} páginas. ` : ''}No plano ${cotaPlano().nome}, cada arquivo pode ter até ${cotaLimitePaginas()} páginas. Baixe um período menor e tente de novo.`;
+    },
+    get lote(){
+      const n = cotaUltimoBloqueio && cotaUltimoBloqueio.paginas;
+      return `${n ? `${n} páginas: ` : ''}o plano ${cotaPlano().nome} lê até ${cotaLimitePaginas()} por arquivo.`;
+    }
+  },
+  cota_sem_conexao: {
+    title: 'Sem conexão',
+    message: 'Para importar, o SeeAll confere o seu limite do mês pela internet. Conecte-se e tente de novo.',
+    lote: 'Sem conexão para conferir o limite do mês: este arquivo não foi lido.'
+  },
+  cota_falhou: {
+    title: 'Não conseguimos conferir seu limite',
+    message: 'O arquivo não foi lido e não conta no seu limite. Tente de novo em alguns instantes.',
+    lote: 'Não conseguimos conferir o limite do mês: este arquivo não foi lido.'
   }
 };
 
 function mostrarErroImportacao(codigo, detalheTecnico){
   importEmAndamento = false;
+  cotaLiberarReservadas(); // (2.3.46) erro de leitura ou ao salvar: a vaga volta
   registrarEvento('importacao_falhou', { codigo, formato: formatoDoNome(ultimoArquivoImportado && ultimoArquivoImportado.name) }); // (2.3.20)
   const info = IMPORT_ERROS[codigo] || IMPORT_ERROS.generic;
   document.getElementById('import-error-title').textContent = info.title;
@@ -8939,7 +8972,7 @@ function renderImportBatchHeader(){
   const total = importBatch.length;
   document.getElementById('import-batch-head-title').textContent =
     total===1 ? '1 arquivo selecionado' : `${total} arquivos selecionados`;
-  document.getElementById('import-batch-head-count').textContent = `${total} de ${MAX_IMPORT_FILES} arquivos`;
+  document.getElementById('import-batch-head-count').textContent = `${total} de ${cotaLimiteDoLote()} arquivos`; // (2.3.46) pelo plano
 }
 
 function renderImportBatchList(){
@@ -8965,13 +8998,14 @@ function renderImportBatchList(){
     btn.addEventListener('click', ()=> removerArquivoDoLote(btn.dataset.removeId));
   });
 
-  const cheio = importBatch.length >= MAX_IMPORT_FILES;
+  const cheio = importBatch.length >= cotaLimiteDoLote(); // (2.3.46)
   document.getElementById('import-batch-add-row').style.display = cheio ? 'none' : '';
 
   const validos = contarArquivosValidos();
   const btnProcessar = document.getElementById('import-process-btn');
   btnProcessar.textContent = validos===1 ? 'PROCESSAR ARQUIVO' : `PROCESSAR ${validos} ARQUIVOS`;
   btnProcessar.disabled = validos===0 || importEmAndamento;
+  renderImportBatchCota(); // (2.3.46)
 }
 
 function mostrarLimiteAtingido(){
@@ -8987,7 +9021,7 @@ function mostrarLimiteAtingido(){
 function adicionarArquivosAoLote(fileList, kind){
   const arquivos = Array.from(fileList||[]);
   if(!arquivos.length) return;
-  const espaco = MAX_IMPORT_FILES - importBatch.length;
+  const espaco = cotaLimiteDoLote() - importBatch.length; // (2.3.46) Gratuito 5, Plus 25 (sem cota no servidor: MAX_IMPORT_FILES)
   if(espaco <= 0){ mostrarLimiteAtingido(); return; }
   const aceitos = arquivos.slice(0, espaco);
   if(arquivos.length > espaco) mostrarLimiteAtingido();
@@ -9343,6 +9377,7 @@ function finalizarImportacao(novasTxFinal, origemId, ignoradasPorDuplicidade){
     if(typeof renderTransactionsView === 'function') renderTransactionsView();
     persistirEstado();
     mostrarResultadoImportacao(novasTxFinal, origemId, ignoradasPorDuplicidade || 0);
+    cotaConfirmarReservadas(); // (2.3.46) só agora os arquivos passam a contar na cota do mês
   }catch(err){
     // Passo 34: desfaz qualquer alteração parcial e avisa em linguagem
     // simples — sem termos técnicos, com uma forma clara de tentar de novo.
@@ -14086,10 +14121,17 @@ async function conferirConteudoDoArquivo(file, tipo){
   return { tipo };
 }
 
-async function processarArquivoImportado(file, tipo, onStage, onPagina){
+async function processarArquivoImportado(file, tipo, onStage, onPagina, antesDeLer){
   const conferido = await conferirConteudoDoArquivo(file, tipo);
   if(conferido.erro) return { registros:null, texto:null, erroArquivo: conferido.erro };
   tipo = conferido.tipo;
+  // (2.3.46) cota do mês: só depois de o arquivo passar na conferência (e, no PDF, de abrir e
+  // saber as páginas). Arquivo inválido ou com senha não chega a pedir vaga.
+  const bloqueioDaCota = async paginas => antesDeLer ? antesDeLer(tipo, paginas) : null;
+  if(tipo==='csv' || tipo==='ofx' || tipo==='image'){
+    const bloqueio = await bloqueioDaCota(tipo==='image' ? 1 : null);
+    if(bloqueio) return { registros:null, texto:null, erroArquivo: bloqueio };
+  }
   if(tipo==='csv'){
     await onStage(0);
     const texto = await lerTextoDoArquivo(file);
@@ -14118,6 +14160,8 @@ async function processarArquivoImportado(file, tipo, onStage, onPagina){
       // página) — isso não é a mesma coisa que "arquivo vazio" (Passo 18).
       return { registros:null, texto:null, motorIndisponivel:true, erroDetalhe: erroAbrir };
     }
+    const bloqueio = await bloqueioDaCota(pdf.numPages); // (2.3.46) páginas contadas antes de ler e do OCR
+    if(bloqueio) return { registros:null, texto:null, erroArquivo: bloqueio };
     const { texto, itens, paginas, itensPorPagina, itensPosicionais } = await extrairTextoDoPdf(pdf, onPagina);
     // Passo 9 (Parte 2): decide OCR PÁGINA A PÁGINA. Nunca transforma o PDF
     // inteiro em imagem quando só ALGUMAS páginas não têm texto nativo.
@@ -14185,6 +14229,150 @@ async function processarArquivoImportado(file, tipo, onStage, onPagina){
   return { registros: null, texto: null, tipoDesconhecido: true };
 }
 
+/* =========================================================
+   (2.3.46) PLANOS E COTA MENSAL DE IMPORTAÇÃO
+   Quem decide é o servidor (ferramentas/seeall-2-3-46-supabase.sql): o app
+   reserva a vaga antes de ler o arquivo, confirma quando a importação é
+   concluída e devolve a vaga se o arquivo falhar ou a pessoa cancelar.
+   PLANOS só repete os números do servidor para exibir: mudar aqui não muda a cota.
+   Limitação: a leitura é no aparelho; um app adulterado pode ler sem pedir vaga.
+   ========================================================= */
+const PLANOS = {
+  gratuito: { nome:'Gratuito', arquivosPorMes:5, paginasPorArquivo:5, precoCentavos:0 },
+  plus: { nome:'SeeAll Plus', arquivosPorMes:25, paginasPorArquivo:25, precoCentavos:1990 }
+};
+const COTA_CONFIRMAR_KEY = 'seeall_cota_confirmar'; // confirmações que não chegaram ao servidor (sem conexão)
+let cotaImportacao = null;        // última resposta do servidor: { plano, mes, arquivos_por_mes, paginas_por_arquivo, usados, restantes }
+let cotaUltimoBloqueio = null;    // { paginas } do último arquivo barrado, para a mensagem
+const cotaReservadas = new Map(); // hash -> páginas: vagas reservadas nesta importação, ainda não confirmadas
+let cotaEnviando = null;
+
+function cotaPlano(){ return PLANOS[(cotaImportacao && cotaImportacao.plano) || 'gratuito'] || PLANOS.gratuito; }
+function cotaLimiteArquivos(){ return cotaImportacao ? cotaImportacao.arquivos_por_mes : cotaPlano().arquivosPorMes; }
+function cotaLimitePaginas(){ return cotaImportacao ? cotaImportacao.paginas_por_arquivo : cotaPlano().paginasPorArquivo; }
+// Arquivos por vez = arquivos do plano no mês (Gratuito 5, Plus 25). Sem a cota no servidor, o limite de antes.
+function cotaLimiteDoLote(){ return cotaImportacao ? cotaImportacao.arquivos_por_mes : MAX_IMPORT_FILES; }
+
+// { dados } ou { erro:'sem_funcao' | 'sem_conexao' | 'falhou' }
+async function cotaRpc(nome, args){
+  const cli = window.seeallSupabaseCliente;
+  if(!cli || typeof cli.rpc !== 'function') return { erro:'sem_funcao' };
+  if(navigator.onLine === false) return { erro:'sem_conexao' };
+  try{
+    const { data, error } = await cli.rpc(nome, args || {});
+    if(!error){
+      if(data && data.cota) cotaImportacao = data.cota;
+      return { dados: data || {} };
+    }
+    // o SQL da 2.3.46 ainda não rodou: o app segue como antes, sem cota
+    if(error.code === 'PGRST202' || /could not find the function/i.test(String(error.message || ''))) return { erro:'sem_funcao' };
+    if(seeallSyncErroRede(error)) return { erro:'sem_conexao' };
+    console.warn('[SeeAll][cota]', nome, error.code || error.message || error);
+    return { erro:'falhou' };
+  }catch(e){
+    return { erro:'sem_conexao' };
+  }
+}
+
+// Gancho de processarArquivoImportado: roda depois da conferência do arquivo e, no PDF,
+// já com o número de páginas (antes do OCR). Devolve null para seguir ou um código de IMPORT_ERROS.
+function cotaAntesDeLer(hash){
+  return async (tipo, paginas)=>{
+    await cotaEnviarConfirmacoes();
+    const r = await cotaRpc('reservar_importacao', { p_hash: hash, p_paginas: paginas == null ? null : paginas });
+    if(r.erro === 'sem_funcao'){ console.warn('[SeeAll][cota] servidor sem a cota (SQL 2.3.46): importação sem limite'); return null; }
+    if(r.erro) return r.erro === 'sem_conexao' ? 'cota_sem_conexao' : 'cota_falhou';
+    const d = r.dados;
+    atualizarCotaNaTela();
+    if(d.ok){
+      if(!d.duplicado) cotaReservadas.set(hash, paginas == null ? null : paginas); // mesmo arquivo já confirmado no mês: não conta de novo
+      return null;
+    }
+    cotaUltimoBloqueio = { paginas };
+    if(d.motivo === 'cota') return 'cota_mes';
+    if(d.motivo === 'paginas') return 'cota_paginas';
+    return 'cota_falhou';
+  };
+}
+
+// Devolve a vaga (arquivo inválido, falha técnica, cancelamento). Sem conexão, a reserva vence sozinha em 2 h.
+function cotaLiberar(hash){
+  if(!hash || !cotaReservadas.has(hash)) return;
+  cotaReservadas.delete(hash);
+  cotaRpc('liberar_importacao', { p_hash: hash }).then(()=> atualizarCotaNaTela());
+}
+function cotaLiberarReservadas(){
+  Array.from(cotaReservadas.keys()).forEach(cotaLiberar);
+}
+
+// Importação concluída: as vagas reservadas passam a contar. Ficam guardadas até o servidor confirmar.
+function cotaLerPendentes(){
+  try{ const v = JSON.parse(localStorage.getItem(COTA_CONFIRMAR_KEY)); return Array.isArray(v) ? v : []; }catch(e){ return []; }
+}
+function cotaGravarPendentes(lista){
+  try{ if(lista.length) localStorage.setItem(COTA_CONFIRMAR_KEY, JSON.stringify(lista)); else localStorage.removeItem(COTA_CONFIRMAR_KEY); }catch(e){}
+}
+function cotaConfirmarReservadas(){
+  if(!cotaReservadas.size) return;
+  const uid = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+  const lista = cotaLerPendentes();
+  cotaReservadas.forEach((paginas, hash)=>{
+    if(!lista.some(p => p.u === uid && p.h === hash)) lista.push({ u:uid, h:hash, p:paginas });
+  });
+  cotaReservadas.clear();
+  cotaGravarPendentes(lista);
+  cotaEnviarConfirmacoes().then(()=> atualizarCotaNaTela());
+}
+function cotaEnviarConfirmacoes(){
+  if(cotaEnviando) return cotaEnviando;
+  cotaEnviando = (async ()=>{
+    const uid = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+    const lista = cotaLerPendentes();
+    const restam = [];
+    for(const p of lista){
+      if(!uid || p.u !== uid){ restam.push(p); continue; } // de outra conta: espera ela voltar
+      const r = await cotaRpc('confirmar_importacao', { p_hash: p.h, p_paginas: p.p });
+      if(r.erro === 'sem_conexao') restam.push(p);
+    }
+    // (o que chegou durante o envio continua na lista)
+    const novos = cotaLerPendentes().filter(p => !lista.some(q => q.u === p.u && q.h === p.h));
+    cotaGravarPendentes(restam.concat(novos));
+  })().finally(()=>{ cotaEnviando = null; });
+  return cotaEnviando;
+}
+
+// Linha "Plano Gratuito: 2 de 5 arquivos este mês" na tela de importar e aviso no lote.
+async function atualizarCotaNaTela(buscar){
+  if(buscar){
+    cotaImportacao = null;
+    await cotaEnviarConfirmacoes();
+    await cotaRpc('minha_cota_importacao');
+  }
+  const el = document.getElementById('import-cota');
+  const c = cotaImportacao;
+  const dica = document.getElementById('import-batch-hint');
+  if(dica) dica.textContent = `Você pode selecionar até ${cotaLimiteDoLote()} arquivos por vez`;
+  const limite = document.getElementById('import-batch-limit-msg');
+  if(limite) limite.textContent = `Você pode importar até ${cotaLimiteDoLote()} arquivos por vez.`;
+  if(el){
+    el.hidden = !c;
+    if(c) el.textContent = `Plano ${cotaPlano().nome}: ${c.usados} de ${c.arquivos_por_mes} arquivos usados este mês · até ${c.paginas_por_arquivo} páginas por arquivo`;
+  }
+  renderImportBatchCota();
+}
+function renderImportBatchCota(){
+  const msg = document.getElementById('import-batch-cota-msg');
+  if(!msg) return;
+  const c = cotaImportacao;
+  const validos = typeof contarArquivosValidos === 'function' ? contarArquivosValidos() : 0;
+  const passa = !!c && validos > c.restantes;
+  msg.hidden = !passa;
+  if(passa){
+    msg.textContent = c.restantes
+      ? `Restam ${c.restantes} arquivo${c.restantes===1?'':'s'} no seu limite deste mês. Arquivos já importados neste mês não contam de novo.`
+      : 'Seu limite de arquivos deste mês acabou. Arquivos já importados neste mês não contam de novo.';
+  }
+}
 /* =========================================================
    Parte 1 (lote) — item 20/21/29: fila sequencial que reaproveita
    processarArquivoImportado() e detectFileType() tal como já existem.
@@ -14389,13 +14577,14 @@ async function processarLoteDeImportacao(){
     const inicioMs = performance.now();
 
     try{
-      const resultado = await processarArquivoImportado(item.file, tipoDetectado, onStage, onPagina);
+      const resultado = await processarArquivoImportado(item.file, tipoDetectado, onStage, onPagina, cotaAntesDeLer(item.fileHash));
       item.tempoProcessamentoMs = Math.round(performance.now() - inicioMs);
       if(importBatchCancelado){ item.status = 'cancelled'; renderImportBatchProcessingList(); return; }
       const classificado = classificarResultadoDoArquivo(resultado, tipoDetectado);
       if(!classificado.ok){
         item.status = 'error';
         item.error = classificado.mensagem;
+        cotaLiberar(item.fileHash); // (2.3.46) arquivo que não rendeu não gasta a cota
       }else{
         item.warning = classificado.aviso || null;
         // Cada arquivo ganha sua própria origem (igual ao fluxo de arquivo
@@ -14439,6 +14628,7 @@ async function processarLoteDeImportacao(){
     }catch(err){
       item.status = 'error';
       item.error = IMPORT_ERROS.generic.message;
+      cotaLiberar(item.fileHash); // (2.3.46)
       console.warn('[CashDrift][import-lote] erro ao processar', item.file.name, err && (err.message||err));
     }
     renderImportBatchProcessingList();
@@ -14820,7 +15010,7 @@ function continuarImportacao(file, tipoDetectado, nomeArquivo, formato, fileHash
   }
   async function onStage(i){ destacarEstagio(i); await tick(); }
 
-  processarArquivoImportado(file, tipoDetectado, onStage)
+  processarArquivoImportado(file, tipoDetectado, onStage, undefined, cotaAntesDeLer(fileHash)) // (2.3.46) cota do mês
     .then(async ({ registros: registrosBrutos, texto: conteudoBruto, ocrDisponivel, motorIndisponivel, erroDetalhe, diagPdf, erroArquivo })=>{
       if(erroArquivo){
         importEmAndamento = false;
@@ -16857,7 +17047,7 @@ function renderCfgRecorrentes(){
    Mesmos textos das páginas públicas (legal_textos.py). Abrem por cima de
    tudo — inclusive da tela de criar conta — e o voltar do Android fecha.
    ========================================================= */
-const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "html": "<p class=\"legal-vigencia\">Em vigor desde 18 de outubro de 2026.</p>\n<p>Esta política explica quais dados o SeeAll usa, por que usa e como você controla tudo isso. Ela segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>\n<h3>1. Quem é o responsável</h3>\n<p>O responsável pelos seus dados (o controlador, nos termos da LGPD) é <strong>Gabriel</strong>. Para qualquer assunto de privacidade, inclusive para exercer os seus direitos, escreva para <strong>seeall.app@pm.me</strong>.</p>\n<h3>2. Dados que o SeeAll usa</h3>\n<ul><li><strong>Conta:</strong> nome, e-mail e senha. A senha é guardada pelo serviço de autenticação de forma criptografada; nem o SeeAll consegue vê-la. Se você entrar com o Google, recebemos do Google o seu nome e o seu e-mail.</li><li><strong>Seus dados financeiros:</strong> as transações que você importa ou registra (data, valor, descrição, categoria, banco e forma de pagamento), as informações de cada importação (nome e formato do arquivo, data) e as categorias que você cria.</li><li><strong>Extratos (PDF, CSV, OFX e imagens):</strong> o arquivo é lido no seu celular. O conteúdo completo do extrato fica só no aparelho; para a sua conta vão apenas as transações encontradas e as informações da importação. Se a leitura falhar e você tocar em “Enviar este arquivo” e aceitar, o arquivo inteiro é enviado para uma área privada, usado só para o SeeAll aprender a ler aquele modelo de extrato e apagado em até 90 dias.</li><li><strong>Notificações dos bancos (só no Android, e só se você ligar):</strong> o SeeAll lê as notificações dos apps de banco compatíveis para registrar compras, Pix e transferências. As notificações de outros apps são ignoradas na hora. O texto da notificação fica só no aparelho; para a sua conta vão apenas os dados da transação.</li><li><strong>Perfil e preferências:</strong> foto, tema e cores ficam só no aparelho.</li><li><strong>Estatísticas anônimas de uso:</strong> o app conta alguns acontecimentos sem identificar você, a sua conta ou o aparelho: a instalação, o resultado da leitura de cada extrato (formato, modelo do banco, faixa de quantidade de transações e se o saldo conferiu), se a leitura de notificações foi ligada e se o app voltou a ser usado depois de 7 e de 30 dias. Não vão valores, descrições, nomes nem dados da conta. Você pode desligar em Configurações › Estatísticas anônimas de uso.</li><li><strong>Dados técnicos:</strong> ao usar a conta e ao carregar as fontes do app, os serviços envolvidos recebem dados técnicos da conexão, como endereço IP e tipo de aparelho.</li></ul>\n<p>O SeeAll <strong>não</strong> usa a sua localização, os seus contatos ou o seu microfone, <strong>não</strong> mostra anúncios e <strong>não</strong> usa ferramentas de rastreamento de outras empresas.</p>\n<h3>3. Para que usamos (e com que base legal)</h3>\n<ul><li>Criar e manter a sua conta, guardar os seus dados e sincronizá-los entre os seus aparelhos: para prestar o serviço que você contrata ao criar a conta (execução de contrato, art. 7º, V, da LGPD).</li><li>Ler as notificações dos bancos: com o seu consentimento, que você dá ao ligar a leitura e pode retirar quando quiser, desligando-a (art. 7º, I).</li><li>Contar as estatísticas anônimas de uso, para saber quais extratos o app lê bem e onde melhorar: legítimo interesse (art. 7º, IX), com a opção de desligar.</li><li>Manter o serviço seguro e evitar fraudes e abusos, inclusive com registros técnicos de acesso: legítimo interesse (art. 7º, IX) e cumprimento de obrigação legal, quando houver (art. 7º, II).</li></ul>\n<p>Não vendemos os seus dados e não os usamos para publicidade.</p>\n<h3>4. Com quem os dados são compartilhados</h3>\n<p>Só com os serviços que o SeeAll usa para funcionar, que tratam os dados em nosso nome (operadores):</p>\n<ul><li><strong>Supabase:</strong> autenticação e banco de dados da sua conta.</li><li><strong>Google:</strong> somente se você escolher entrar com o Google.</li><li><strong>Google Fonts:</strong> entrega as fontes do app. Recebe apenas dados técnicos da conexão, nunca os seus dados financeiros. As bibliotecas de leitura de PDF e de imagem vêm dentro do próprio app.</li></ul>\n<p>Também podemos compartilhar dados com autoridades quando houver obrigação legal ou ordem judicial.</p>\n<h3>5. Transferência para fora do Brasil</h3>\n<p>Alguns desses serviços guardam ou processam dados fora do Brasil. Essa transferência é necessária para prestar o serviço que você contratou (art. 33, IX, da LGPD), e os fornecedores adotam medidas de segurança compatíveis com a lei.</p>\n<h3>6. Por quanto tempo guardamos</h3>\n<ul><li>Os dados da conta e os seus dados financeiros ficam guardados enquanto a sua conta existir.</li><li>Quando você exclui a conta, ela e os dados dela são apagados da nuvem na hora, inclusive os extratos que você tiver enviado para o suporte. Cópias de segurança do provedor podem levar alguns dias para serem substituídas automaticamente.</li><li>Extratos enviados para o suporte são apagados automaticamente em até 90 dias.</li><li>Registros técnicos de acesso podem ser mantidos pelo prazo exigido em lei.</li><li>As estatísticas anônimas não ficam ligadas a você nem à sua conta e são apagadas em até 12 meses.</li><li>O que fica só no aparelho sai quando você usa “Apagar todos os dados”, exclui a conta pelo app ou desinstala o SeeAll.</li></ul>\n<h3>7. Seus direitos</h3>\n<p>A qualquer momento, você pode: confirmar se tratamos os seus dados e acessá-los; corrigi-los; pedir a portabilidade; pedir a eliminação; saber com quem os compartilhamos; retirar o consentimento; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>\n<p>Boa parte disso já está no app: exporte as suas transações em Configurações › Exportar transações (CSV); edite ou apague transações; desligue a leitura de notificações; use Configurações › Apagar todos os dados ou Configurações › Excluir conta. Para o restante, escreva para <strong>seeall.app@pm.me</strong>. Respondemos em até 15 dias.</p>\n<h3>8. Segurança</h3>\n<p>A comunicação com a nuvem é criptografada (HTTPS), e cada conta só enxerga os próprios dados, por regras do próprio banco de dados. Mesmo assim, nenhum sistema é totalmente imune a falhas. Se acontecer um incidente que possa trazer risco a você, avisaremos você e a ANPD, como manda a lei.</p>\n<h3>9. Crianças e adolescentes</h3>\n<p>O SeeAll não é destinado a menores de 18 anos.</p>\n<h3>10. Mudanças nesta política</h3>\n<p>Quando esta política mudar, avisaremos no app. A data no topo indica a versão em vigor.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · seeall.app@pm.me</p>"}, "termos": {"titulo": "Termos de uso", "html": "<p class=\"legal-vigencia\">Em vigor desde 10 de outubro de 2026.</p>\n<p>Estes termos explicam as regras de uso do SeeAll. Ao criar uma conta, você concorda com eles e com a Política de privacidade.</p>\n<h3>1. O que é o SeeAll</h3>\n<p>O SeeAll é um aplicativo para organizar e entender as suas finanças pessoais a partir de extratos, registros e notificações que você mesmo traz para ele.</p>\n<p>O SeeAll <strong>não</strong> é banco nem instituição financeira: não movimenta dinheiro, não faz pagamentos, não acessa as suas contas bancárias e não oferece consultoria financeira, de investimentos ou contábil. As informações do app servem para o seu acompanhamento pessoal e não substituem os extratos oficiais do seu banco.</p>\n<h3>2. Sua conta</h3>\n<ul><li>Você precisa ter 18 anos ou mais para usar o SeeAll.</li><li>Use informações verdadeiras e mantenha a sua senha em segredo. Você é responsável pelo que acontece na sua conta.</li><li>Se perceber uso indevido da sua conta, troque a senha e avise-nos em <strong>seeall.app@pm.me</strong>.</li></ul>\n<h3>3. Seus dados</h3>\n<p>Os dados que você coloca no SeeAll continuam sendo seus. Você nos autoriza a tratá-los apenas para prestar o serviço, como descrito na Política de privacidade. Você pode exportá-los, apagá-los ou excluir a conta quando quiser.</p>\n<h3>4. Leitura automática</h3>\n<p>O SeeAll lê extratos e notificações de forma automática e pode errar: um valor, uma data ou uma categoria podem não sair como deveriam. Confira as informações importantes no seu banco. O SeeAll não se responsabiliza por decisões tomadas apenas com base nos dados do app.</p>\n<h3>5. Uso permitido</h3>\n<p>Não é permitido usar o SeeAll para fins ilegais, tentar acessar dados de outras pessoas, contornar as medidas de segurança, sobrecarregar o serviço de propósito ou usá-lo de forma que prejudique outras pessoas. Contas que fizerem isso podem ser suspensas ou encerradas.</p>\n<h3>6. Marcas de terceiros</h3>\n<p>Os nomes de bancos, aplicativos e serviços citados no SeeAll pertencem aos seus titulares e aparecem apenas para indicar com quais extratos e notificações o app funciona. O SeeAll não tem vínculo, parceria ou patrocínio de nenhum deles.</p>\n<h3>7. Disponibilidade e mudanças</h3>\n<p>Trabalhamos para manter o SeeAll funcionando, mas ele pode ficar indisponível por manutenção, falhas de internet ou de fornecedores. A sincronização entre aparelhos depende de conexão. Podemos melhorar, mudar ou encerrar funções; se houver mudança importante, avisaremos no app. Se no futuro houver recursos pagos, as condições serão informadas antes de qualquer cobrança.</p>\n<h3>8. Responsabilidade</h3>\n<p>Na medida permitida pela lei, inclusive pelo Código de Defesa do Consumidor, o SeeAll não responde por perdas causadas por informações incorretas vindas de extratos ou notificações, por uso indevido da sua conta por falta de cuidado com a senha, ou por indisponibilidades fora do nosso controle.</p>\n<h3>9. Encerramento</h3>\n<p>Você pode excluir a sua conta a qualquer momento em Configurações › Excluir conta. Também podemos encerrar contas que violem estes termos, avisando antes quando for possível.</p>\n<h3>10. Mudanças nestes termos</h3>\n<p>Se estes termos mudarem, avisaremos no app. Continuar usando o SeeAll depois do aviso significa concordar com a nova versão.</p>\n<h3>11. Lei e foro</h3>\n<p>Estes termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · seeall.app@pm.me</p>"}};
+const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "html": "<p class=\"legal-vigencia\">Em vigor desde 18 de outubro de 2026.</p>\n<p>Esta política explica quais dados o SeeAll usa, por que usa e como você controla tudo isso. Ela segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>\n<h3>1. Quem é o responsável</h3>\n<p>O responsável pelos seus dados (o controlador, nos termos da LGPD) é <strong>Gabriel</strong>. Para qualquer assunto de privacidade, inclusive para exercer os seus direitos, escreva para <strong>support@seeall.app.br</strong>.</p>\n<h3>2. Dados que o SeeAll usa</h3>\n<ul><li><strong>Conta:</strong> nome, e-mail e senha. A senha é guardada pelo serviço de autenticação de forma criptografada; nem o SeeAll consegue vê-la. Se você entrar com o Google, recebemos do Google o seu nome e o seu e-mail.</li><li><strong>Seus dados financeiros:</strong> as transações que você importa ou registra (data, valor, descrição, categoria, banco e forma de pagamento), as informações de cada importação (nome e formato do arquivo, data) e as categorias que você cria.</li><li><strong>Extratos (PDF, CSV, OFX e imagens):</strong> o arquivo é lido no seu celular. O conteúdo completo do extrato fica só no aparelho; para a sua conta vão apenas as transações encontradas e as informações da importação. Se a leitura falhar e você tocar em “Enviar este arquivo” e aceitar, o arquivo inteiro é enviado para uma área privada, usado só para o SeeAll aprender a ler aquele modelo de extrato e apagado em até 90 dias.</li><li><strong>Notificações dos bancos (só no Android, e só se você ligar):</strong> o SeeAll lê as notificações dos apps de banco compatíveis para registrar compras, Pix e transferências. As notificações de outros apps são ignoradas na hora. O texto da notificação fica só no aparelho; para a sua conta vão apenas os dados da transação.</li><li><strong>Perfil e preferências:</strong> foto, tema e cores ficam só no aparelho.</li><li><strong>Estatísticas anônimas de uso:</strong> o app conta alguns acontecimentos sem identificar você, a sua conta ou o aparelho: a instalação, o resultado da leitura de cada extrato (formato, modelo do banco, faixa de quantidade de transações e se o saldo conferiu), se a leitura de notificações foi ligada e se o app voltou a ser usado depois de 7 e de 30 dias. Não vão valores, descrições, nomes nem dados da conta. Você pode desligar em Configurações › Estatísticas anônimas de uso.</li><li><strong>Dados técnicos:</strong> ao usar a conta e ao carregar as fontes do app, os serviços envolvidos recebem dados técnicos da conexão, como endereço IP e tipo de aparelho.</li></ul>\n<p>O SeeAll <strong>não</strong> usa a sua localização, os seus contatos ou o seu microfone, <strong>não</strong> mostra anúncios e <strong>não</strong> usa ferramentas de rastreamento de outras empresas.</p>\n<h3>3. Para que usamos (e com que base legal)</h3>\n<ul><li>Criar e manter a sua conta, guardar os seus dados e sincronizá-los entre os seus aparelhos: para prestar o serviço que você contrata ao criar a conta (execução de contrato, art. 7º, V, da LGPD).</li><li>Ler as notificações dos bancos: com o seu consentimento, que você dá ao ligar a leitura e pode retirar quando quiser, desligando-a (art. 7º, I).</li><li>Contar as estatísticas anônimas de uso, para saber quais extratos o app lê bem e onde melhorar: legítimo interesse (art. 7º, IX), com a opção de desligar.</li><li>Manter o serviço seguro e evitar fraudes e abusos, inclusive com registros técnicos de acesso: legítimo interesse (art. 7º, IX) e cumprimento de obrigação legal, quando houver (art. 7º, II).</li></ul>\n<p>Não vendemos os seus dados e não os usamos para publicidade.</p>\n<h3>4. Com quem os dados são compartilhados</h3>\n<p>Só com os serviços que o SeeAll usa para funcionar, que tratam os dados em nosso nome (operadores):</p>\n<ul><li><strong>Supabase:</strong> autenticação e banco de dados da sua conta.</li><li><strong>Google:</strong> somente se você escolher entrar com o Google.</li><li><strong>Google Fonts:</strong> entrega as fontes do app. Recebe apenas dados técnicos da conexão, nunca os seus dados financeiros. As bibliotecas de leitura de PDF e de imagem vêm dentro do próprio app.</li></ul>\n<p>Também podemos compartilhar dados com autoridades quando houver obrigação legal ou ordem judicial.</p>\n<h3>5. Transferência para fora do Brasil</h3>\n<p>Alguns desses serviços guardam ou processam dados fora do Brasil. Essa transferência é necessária para prestar o serviço que você contratou (art. 33, IX, da LGPD), e os fornecedores adotam medidas de segurança compatíveis com a lei.</p>\n<h3>6. Por quanto tempo guardamos</h3>\n<ul><li>Os dados da conta e os seus dados financeiros ficam guardados enquanto a sua conta existir.</li><li>Quando você exclui a conta, ela e os dados dela são apagados da nuvem na hora, inclusive os extratos que você tiver enviado para o suporte. Cópias de segurança do provedor podem levar alguns dias para serem substituídas automaticamente.</li><li>Extratos enviados para o suporte são apagados automaticamente em até 90 dias.</li><li>Registros técnicos de acesso podem ser mantidos pelo prazo exigido em lei.</li><li>As estatísticas anônimas não ficam ligadas a você nem à sua conta e são apagadas em até 12 meses.</li><li>O que fica só no aparelho sai quando você usa “Apagar todos os dados”, exclui a conta pelo app ou desinstala o SeeAll.</li></ul>\n<h3>7. Seus direitos</h3>\n<p>A qualquer momento, você pode: confirmar se tratamos os seus dados e acessá-los; corrigi-los; pedir a portabilidade; pedir a eliminação; saber com quem os compartilhamos; retirar o consentimento; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>\n<p>Boa parte disso já está no app: exporte as suas transações em Configurações › Exportar transações (CSV); edite ou apague transações; desligue a leitura de notificações; use Configurações › Apagar todos os dados ou Configurações › Excluir conta. Para o restante, escreva para <strong>support@seeall.app.br</strong>. Respondemos em até 15 dias.</p>\n<h3>8. Segurança</h3>\n<p>A comunicação com a nuvem é criptografada (HTTPS), e cada conta só enxerga os próprios dados, por regras do próprio banco de dados. Mesmo assim, nenhum sistema é totalmente imune a falhas. Se acontecer um incidente que possa trazer risco a você, avisaremos você e a ANPD, como manda a lei.</p>\n<h3>9. Crianças e adolescentes</h3>\n<p>O SeeAll não é destinado a menores de 18 anos.</p>\n<h3>10. Mudanças nesta política</h3>\n<p>Quando esta política mudar, avisaremos no app. A data no topo indica a versão em vigor.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}, "termos": {"titulo": "Termos de uso", "html": "<p class=\"legal-vigencia\">Em vigor desde 10 de outubro de 2026.</p>\n<p>Estes termos explicam as regras de uso do SeeAll. Ao criar uma conta, você concorda com eles e com a Política de privacidade.</p>\n<h3>1. O que é o SeeAll</h3>\n<p>O SeeAll é um aplicativo para organizar e entender as suas finanças pessoais a partir de extratos, registros e notificações que você mesmo traz para ele.</p>\n<p>O SeeAll <strong>não</strong> é banco nem instituição financeira: não movimenta dinheiro, não faz pagamentos, não acessa as suas contas bancárias e não oferece consultoria financeira, de investimentos ou contábil. As informações do app servem para o seu acompanhamento pessoal e não substituem os extratos oficiais do seu banco.</p>\n<h3>2. Sua conta</h3>\n<ul><li>Você precisa ter 18 anos ou mais para usar o SeeAll.</li><li>Use informações verdadeiras e mantenha a sua senha em segredo. Você é responsável pelo que acontece na sua conta.</li><li>Se perceber uso indevido da sua conta, troque a senha e avise-nos em <strong>support@seeall.app.br</strong>.</li></ul>\n<h3>3. Seus dados</h3>\n<p>Os dados que você coloca no SeeAll continuam sendo seus. Você nos autoriza a tratá-los apenas para prestar o serviço, como descrito na Política de privacidade. Você pode exportá-los, apagá-los ou excluir a conta quando quiser.</p>\n<h3>4. Leitura automática</h3>\n<p>O SeeAll lê extratos e notificações de forma automática e pode errar: um valor, uma data ou uma categoria podem não sair como deveriam. Confira as informações importantes no seu banco. O SeeAll não se responsabiliza por decisões tomadas apenas com base nos dados do app.</p>\n<h3>5. Uso permitido</h3>\n<p>Não é permitido usar o SeeAll para fins ilegais, tentar acessar dados de outras pessoas, contornar as medidas de segurança, sobrecarregar o serviço de propósito ou usá-lo de forma que prejudique outras pessoas. Contas que fizerem isso podem ser suspensas ou encerradas.</p>\n<h3>6. Marcas de terceiros</h3>\n<p>Os nomes de bancos, aplicativos e serviços citados no SeeAll pertencem aos seus titulares e aparecem apenas para indicar com quais extratos e notificações o app funciona. O SeeAll não tem vínculo, parceria ou patrocínio de nenhum deles.</p>\n<h3>7. Disponibilidade e mudanças</h3>\n<p>Trabalhamos para manter o SeeAll funcionando, mas ele pode ficar indisponível por manutenção, falhas de internet ou de fornecedores. A sincronização entre aparelhos depende de conexão. Podemos melhorar, mudar ou encerrar funções; se houver mudança importante, avisaremos no app. Se no futuro houver recursos pagos, as condições serão informadas antes de qualquer cobrança.</p>\n<h3>8. Responsabilidade</h3>\n<p>Na medida permitida pela lei, inclusive pelo Código de Defesa do Consumidor, o SeeAll não responde por perdas causadas por informações incorretas vindas de extratos ou notificações, por uso indevido da sua conta por falta de cuidado com a senha, ou por indisponibilidades fora do nosso controle.</p>\n<h3>9. Encerramento</h3>\n<p>Você pode excluir a sua conta a qualquer momento em Configurações › Excluir conta. Também podemos encerrar contas que violem estes termos, avisando antes quando for possível.</p>\n<h3>10. Mudanças nestes termos</h3>\n<p>Se estes termos mudarem, avisaremos no app. Continuar usando o SeeAll depois do aviso significa concordar com a nova versão.</p>\n<h3>11. Lei e foro</h3>\n<p>Estes termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}};
 (function iniciarLegal(){
   const modal = document.getElementById('legal-modal');
   const corpo = document.getElementById('legal-corpo');
@@ -16905,7 +17095,7 @@ const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "htm
    .app) não recebem os toques feitos aqui. Nada entra no
    TAB_ORDER nem altera currentTabIndex.
    ========================================================= */
-const SEEALL_VERSAO = '2.3.45'; // (2.3.7) nova abertura e nova logo
+const SEEALL_VERSAO = '2.3.46'; // (2.3.7) nova abertura e nova logo
 const SEEALL_VIBRACAO_KEY = 'seeall_vibracao';
 const SEEALL_TUTORIAL_KEY = 'seeall_tutorial_v1';
 const SEEALL_ETAPAS_IMPORT_CRITICAS = ['file','processing','review','dupsummary','dupreview','duplicado'];
