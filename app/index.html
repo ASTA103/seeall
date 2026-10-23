@@ -1992,6 +1992,14 @@ document.documentElement.setAttribute('data-auth','gate');})();
   .planos-duvidas{ padding:4px 0; }
   .planos-duvida{ padding:12px 16px; font-size:12.5px; line-height:1.45; color:var(--text-dim); }
   .planos-duvida + .planos-duvida{ border-top:1px solid rgba(var(--ink-rgb),0.07); }
+  /* recursos do Plus no perfil (sugestões do desenvolvedor, brilho no nome) */
+  .plus-selo{
+    display:inline-block; vertical-align:2px; margin-left:6px; font-size:10px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--accent-text); background:var(--orange-soft); border-radius:20px; padding:2px 8px;
+  }
+  .plus-selo[hidden]{ display:none; }
+  .perfil-sugestoes button.bloqueado{ opacity:.5; }
+  .perfil-sol.bloqueado{ opacity:.45; }
   .planos-duvida b{ display:block; color:var(--text-white); font-size:13.5px; margin-bottom:2px; }
 
   /* ---------- Meu perfil ---------- */
@@ -4577,7 +4585,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         </div>
       </div>
       <div class="perfil-bloco">
-        <div class="perfil-bloco-titulo" id="perfil-sug-label">Sugestões do desenvolvedor</div>
+        <div class="perfil-bloco-titulo" id="perfil-sug-label">Sugestões do desenvolvedor <span class="plus-selo" data-plus-selo>Plus</span></div><!-- (2.3.47) recurso do SeeAll Plus -->
         <div class="perfil-bloco-sub">Combinações de três cores: destaque, o que entrou e o tom do fundo.</div>
         <div class="perfil-sugestoes" role="radiogroup" aria-labelledby="perfil-sug-label">
           <button type="button" role="radio" data-paleta="turaco" aria-checked="false"><span class="trio" aria-hidden="true"><i style="background:#D9472F"></i><i style="background:#7B8B3A"></i><i style="background:#EEE8DA"></i></span><span class="sug-nome">Turaco</span><span class="sug-desc">Vermelho, oliva e creme</span></button>
@@ -14491,6 +14499,20 @@ let cotaUltimoBloqueio = null;    // { paginas } do último arquivo barrado, par
 const cotaReservadas = new Map(); // hash -> páginas: vagas reservadas nesta importação, ainda não confirmadas
 let cotaEnviando = null;
 
+// (2.3.47) último plano que o servidor informou, por conta: sem conexão, os recursos do Plus continuam valendo
+const PLANO_CONHECIDO_KEY = 'seeall_plano_conhecido';
+function cotaGuardarPlano(){
+  const uid = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+  if(!uid || !cotaImportacao) return;
+  try{ localStorage.setItem(PLANO_CONHECIDO_KEY, JSON.stringify({ u:uid, p:cotaImportacao.plano })); }catch(e){}
+}
+// Recursos do Plus (sugestões do desenvolvedor, brilho no nome). Quem decide é o servidor (tabela assinaturas).
+function seeallTemPlus(){
+  if(cotaImportacao) return cotaImportacao.plano === 'plus';
+  const uid = typeof getCurrentUserId === 'function' ? getCurrentUserId() : null;
+  try{ const c = JSON.parse(localStorage.getItem(PLANO_CONHECIDO_KEY)); return !!(c && uid && c.u === uid && c.p === 'plus'); }catch(e){ return false; }
+}
+
 function cotaPlano(){ return PLANOS[(cotaImportacao && cotaImportacao.plano) || 'gratuito'] || PLANOS.gratuito; }
 function cotaLimiteArquivos(){ return cotaImportacao ? cotaImportacao.arquivos_por_mes : cotaPlano().arquivosPorMes; }
 function cotaLimitePaginas(){ return cotaImportacao ? cotaImportacao.paginas_por_arquivo : cotaPlano().paginasPorArquivo; }
@@ -14505,7 +14527,11 @@ async function cotaRpc(nome, args){
   try{
     const { data, error } = await cli.rpc(nome, args || {});
     if(!error){
-      if(data && data.cota) cotaImportacao = data.cota;
+      if(data && data.cota){
+        cotaImportacao = data.cota;
+        cotaGuardarPlano(); // (2.3.47)
+        if(typeof aplicarRecursosPlus === 'function') aplicarRecursosPlus();
+      }
       return { dados: data || {} };
     }
     // o SQL da 2.3.46 ainda não rodou: o app segue como antes, sem cota
@@ -19000,7 +19026,26 @@ grupoRadio('.perfil-paletas [data-paleta]', 'paleta', valor=>{
   try{ localStorage.setItem(SEEALL_PALETA_SIMPLES_KEY, valor); }catch(e){}
   escolherPaleta(valor);
 });
+/* (2.3.47) Sugestões do desenvolvedor e o brilho no nome são do SeeAll Plus. Paleta simples, tema
+   e cor do nome continuam no Gratuito. O que a pessoa já usava antes da 2.3.47 continua aplicado
+   (nada muda sozinho na tela dela); só escolher uma sugestão nova ou ligar o brilho pede o Plus. */
+function pedirPlus(msg){
+  mostrarToastImportacao(msg);
+  if(typeof abrirPlanos === 'function') abrirPlanos();
+}
+function aplicarRecursosPlus(){
+  const plus = typeof seeallTemPlus === 'function' && seeallTemPlus();
+  document.querySelectorAll('.perfil-sugestoes [data-paleta]').forEach(b=> b.classList.toggle('bloqueado', !plus && b.dataset.paleta !== paletaAtual));
+  const sol = document.getElementById('perfil-sol');
+  sol.classList.toggle('bloqueado', !plus && !nomeBrilho);
+  sol.setAttribute('aria-label', plus ? 'Brilho no nome' : 'Brilho no nome (SeeAll Plus)');
+  document.querySelectorAll('[data-plus-selo]').forEach(el=>{ el.hidden = plus; });
+}
 grupoRadio('.perfil-sugestoes [data-paleta]', 'paleta', valor=>{
+  if(valor !== paletaAtual && !(typeof seeallTemPlus === 'function' && seeallTemPlus())){
+    pedirPlus('As sugestões do desenvolvedor são do SeeAll Plus.');
+    return;
+  }
   if(valor === paletaAtual){
     escolherPaleta(paletaSimples);
     const nome = document.querySelector(`.perfil-sugestoes [data-paleta="${valor}"] .sug-nome`);
@@ -19008,6 +19053,7 @@ grupoRadio('.perfil-sugestoes [data-paleta]', 'paleta', valor=>{
     return;
   }
   escolherPaleta(valor);
+  aplicarRecursosPlus();
 });
 
 /* ---------- cor e brilho do nome (2.1.46) ---------- */
@@ -19032,10 +19078,15 @@ grupoRadio('.perfil-cores-nome [data-nomecor]', 'nomecor', valor=>{
   aplicarCorNome();
 });
 document.getElementById('perfil-sol').addEventListener('click', ()=>{
+  if(!nomeBrilho && !(typeof seeallTemPlus === 'function' && seeallTemPlus())){ // (2.3.47) desligar sempre pode
+    pedirPlus('O nome com brilho é do SeeAll Plus.');
+    return;
+  }
   nomeBrilho = !nomeBrilho;
   try{ localStorage.setItem(SEEALL_NOME_BRILHO_KEY, nomeBrilho ? '1' : '0'); }catch(e){}
   seeallVibrar();
   aplicarCorNome();
+  aplicarRecursosPlus();
 });
 aplicarCorNome();
 
@@ -19044,6 +19095,7 @@ function abrirPerfil(){
   aplicarNome();
   aplicarFoto();
   aplicarTema();
+  aplicarRecursosPlus(); // (2.3.47)
   abrirCamada(perfilLayer, document.getElementById('perfil-back'));
   camadas[camadas.length-1].aoFechar = ()=> terminarEdicaoNome(true);
 }
@@ -19062,6 +19114,7 @@ perfilLayer.addEventListener('keydown', e=>{
 aplicarNome();
 aplicarFoto();
 aplicarTema();
+aplicarRecursosPlus();
 
 /* =========================================================
    CATEGORIAS DO USUÁRIO — tela, editor e troca no detalhe (2.1.44)
@@ -19368,12 +19421,15 @@ const PLANOS_RECURSOS = {
     `Até ${PLANOS.gratuito.paginasPorArquivo} páginas por arquivo`,
     'PDF, CSV, OFX e imagem, lidos no aparelho',
     'Relatórios, calendário e categorias',
+    'Tema claro ou escuro, paleta de cores e cor do nome',
     'Seus dados na sua conta, em todos os aparelhos'
   ],
   plus: [
     `${PLANOS.plus.arquivosPorMes} extratos por mês`,
     `Até ${PLANOS.plus.paginasPorArquivo} páginas por arquivo`,
     'Tudo do plano Gratuito',
+    'Sugestões de cores do desenvolvedor',
+    'Nome com brilho',
     'Ajuda a manter o SeeAll sem anúncios'
   ]
 };
