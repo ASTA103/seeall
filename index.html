@@ -2,34 +2,408 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SeeAll: controle de gastos · SeeAll</title>
-<meta name="description" content="SeeAll: controle de gastos do aplicativo SeeAll.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SeeAll: controle de gastos</title>
+<meta name="description" content="SeeAll: seu dinheiro explicado de forma simples. Importe o extrato do banco e veja quanto entrou, quanto saiu e para onde o dinheiro foi. Grátis, no Android, no iPhone e no computador.">
+<meta name="theme-color" content="#0F1218">
+<link rel="icon" href="app/icons/icon-192.png">
+<link rel="apple-touch-icon" href="app/icons/icon-192.png">
+<!-- (2.3.47) Site no visual do app (paleta Neblina). Sem script nenhum: a CSP das páginas públicas
+     não permite. "Instalar" leva a app/?instalar=1, onde o próprio app pede a instalação ao navegador. -->
 <style>
-  :root{ --bg:#F3F1EC; --texto:#1A1A1A; --suave:#5C5A55; --linha:rgba(0,0,0,.09); --laranja:#A84B16; }
-  @media (prefers-color-scheme: dark){ :root{ --bg:#111111; --texto:#F2F0EA; --suave:#A7A5A0; --linha:rgba(255,255,255,.1); --laranja:#E8823F; } }
+  :root{
+    --bg:#0F1218; --bg-dark:#181D26; --card:#212836; --track:#353D4D;
+    --texto:#F5F2EA; --dim:#A9B0BC; --faint:#7A8292; --linha:rgba(245,242,234,.08);
+    --acento:#7C93AE; --acento-claro:#A5B6CA; --entrou:#B8AD9B; --entrou-claro:#D2C9BB; --sobre-acento:#0F1218;
+    --raio:20px; --nav-h:76px; --lateral:240px;
+  }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--bg); color:var(--texto); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-  main{ max-width:720px; margin:0 auto; padding:40px 20px 64px; }
-  .marca{ font-weight:700; font-size:22px; letter-spacing:-.01em; margin:0 0 28px; color:var(--texto); }
-  .marca span{ color:var(--laranja); }
-  h1{ font-size:28px; line-height:1.25; margin:0 0 6px; letter-spacing:-.01em; }
-  h3{ font-size:17px; margin:30px 0 8px; }
-  p, li{ color:var(--suave); }
-  strong{ color:var(--texto); }
-  ul, ol{ padding-left:22px; } li{ margin:6px 0; }
-  .legal-vigencia{ font-size:14px; margin:0 0 22px; }
-  nav{ margin-top:40px; padding-top:18px; border-top:1px solid var(--linha); font-size:14px; }
-  nav a{ color:var(--laranja); margin-right:18px; text-decoration:none; }
-  nav a:hover{ text-decoration:underline; }
+  html{ scroll-behavior:smooth; scroll-padding-top:16px; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+  body{
+    margin:0; background:var(--bg); color:var(--texto);
+    font:16px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; padding-bottom:calc(var(--nav-h) + 24px + env(safe-area-inset-bottom));
+  }
+  a{ color:inherit; }
+  .titulo-num{ font-family:"Space Grotesk", Inter, system-ui, sans-serif; letter-spacing:-.02em; }
+  .marca{ font-weight:800; letter-spacing:-.02em; text-decoration:none; }
+  .marca .all{ color:var(--acento); margin-left:.18em; }
+  .pular{ position:absolute; left:-9999px; }
+  .pular:focus{ left:16px; top:16px; background:var(--card); padding:10px 14px; border-radius:10px; z-index:20; }
+  :focus-visible{ outline:2px solid var(--acento-claro); outline-offset:3px; border-radius:8px; }
+
+  /* ---------- topo (celular e tablet) ---------- */
+  .topo{ display:flex; align-items:center; justify-content:space-between; gap:12px; max-width:1080px; margin:0 auto; padding:20px 20px 0; }
+  .topo .marca{ font-size:24px; }
+  .btn-redondo{
+    display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 16px; border-radius:22px;
+    background:var(--card); border:1px solid var(--linha); text-decoration:none; font-size:14px; font-weight:600;
+  }
+  .btn-redondo svg{ width:18px; height:18px; }
+
+  main{ max-width:1080px; margin:0 auto; padding:0 20px; }
+  section{ padding:56px 0 8px; }
+  .rotulo{ font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); margin:0 0 10px; }
+  h1, h2{ margin:0; letter-spacing:-.02em; line-height:1.12; }
+  h2{ font-size:28px; }
+  .sub{ color:var(--dim); margin:10px 0 0; max-width:620px; }
+
+  /* ---------- herói ---------- */
+  .heroi{ display:grid; gap:36px; padding-top:36px; align-items:center; }
+  .heroi h1{ font-size:clamp(34px, 9vw, 54px); }
+  .heroi h1 .tom{ color:var(--acento-claro); }
+  .heroi .sub{ font-size:17px; }
+  .acoes{ display:flex; flex-wrap:wrap; gap:12px; margin-top:26px; }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px; min-height:52px; padding:0 22px;
+    border-radius:16px; font-weight:700; font-size:15.5px; text-decoration:none; border:1px solid transparent;
+  }
+  .btn svg{ width:20px; height:20px; flex-shrink:0; }
+  .btn-principal{ background:var(--acento); color:var(--sobre-acento); box-shadow:0 10px 30px rgba(124,147,174,.28); }
+  .btn-principal:hover{ background:var(--acento-claro); }
+  .btn-sec{ background:var(--card); border-color:var(--linha); }
+  .btn-sec:hover{ border-color:rgba(165,182,202,.4); }
+  .selos{ display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 0; padding:0; list-style:none; color:var(--faint); font-size:13px; }
+  .selos li{ display:flex; align-items:center; gap:6px; }
+  .selos svg{ width:15px; height:15px; color:var(--acento); }
+
+  /* ---------- o celular de demonstração (o Início do app, em HTML) ---------- */
+  .aparelho{
+    width:min(340px, 100%); margin:0 auto; border-radius:42px; padding:12px; background:#05070A;
+    box-shadow:0 0 0 1px rgba(255,255,255,.07), 0 40px 90px rgba(0,0,0,.55);
+  }
+  .tela{ border-radius:32px; overflow:hidden; background:var(--bg); position:relative; padding-bottom:78px; font-size:13px; }
+  .t-topo{ display:flex; justify-content:space-between; align-items:center; padding:22px 18px 14px; border-bottom:1px solid var(--linha); }
+  .t-ola{ font-size:17px; color:var(--dim); }
+  .t-ola b{ color:var(--texto); font-weight:600; }
+  .t-bot{ display:flex; gap:8px; }
+  .t-bot span{ width:34px; height:34px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; color:var(--dim); }
+  .t-bot svg{ width:15px; height:15px; }
+  .t-saldo{ padding:14px 18px 4px; }
+  .t-rot{ font-size:9.5px; letter-spacing:.1em; color:var(--faint); font-weight:700; display:flex; align-items:center; gap:4px; }
+  .t-valor{ font-size:36px; font-weight:700; margin:6px 0 4px; line-height:1; }
+  .t-nota{ font-size:10.5px; color:var(--dim); }
+  .t-mov{ margin:14px 18px 0; padding-top:12px; border-top:1px solid var(--linha); }
+  .t-linha{ display:flex; justify-content:space-between; font-size:11px; color:var(--dim); margin:10px 0 5px; }
+  .t-linha b{ color:var(--texto); }
+  .t-barra{ height:5px; border-radius:6px; background:var(--track); overflow:hidden; }
+  .t-barra i{ display:block; height:100%; border-radius:6px; background:linear-gradient(90deg, var(--acento), var(--acento-claro)); }
+  .t-barra.ent i{ background:linear-gradient(90deg, var(--entrou), var(--entrou-claro)); }
+  .t-insight{ margin:16px 12px 0; background:var(--card); border-radius:16px; padding:12px; display:flex; gap:10px; align-items:center; font-size:11.5px; color:var(--dim); }
+  .t-insight .ic{ width:34px; height:34px; border-radius:10px; background:rgba(124,147,174,.16); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .t-insight .ic svg{ width:16px; height:16px; }
+  .t-insight b{ color:var(--texto); }
+  .t-tx-h{ display:flex; justify-content:space-between; align-items:baseline; padding:16px 18px 2px; }
+  .t-tx-h b{ font-size:14px; }
+  .t-tx-h span{ color:var(--acento-claro); font-size:11px; }
+  .t-tx{ display:flex; align-items:center; gap:12px; padding:9px 18px; border-bottom:1px solid var(--linha); }
+  .t-tx svg{ width:15px; height:15px; color:var(--faint); flex-shrink:0; }
+  .t-tx div{ flex:1; min-width:0; }
+  .t-tx div b{ display:block; font-weight:500; font-size:12.5px; }
+  .t-tx div small{ color:var(--faint); font-size:10.5px; }
+  .t-tx > span{ font-weight:700; font-size:12.5px; white-space:nowrap; }
+  .t-tx > span.in{ color:var(--entrou); }
+  .t-nav{
+    position:absolute; left:0; right:0; bottom:0; height:64px; background:var(--bg-dark); border-top:1px solid var(--linha);
+    border-radius:20px 20px 0 0; display:flex; justify-content:space-around; align-items:center; font-size:9px; color:var(--faint);
+  }
+  .t-nav span{ display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .t-nav svg{ width:17px; height:17px; }
+  .t-nav .on{ color:var(--acento-claro); }
+  .t-nav .centro{ width:50px; height:50px; border-radius:50%; background:var(--acento); color:var(--sobre-acento); margin-top:-30px; border:5px solid var(--bg); justify-content:center; }
+
+  /* ---------- recursos ---------- */
+  .grade{ display:grid; gap:12px; margin-top:24px; }
+  .card{ background:var(--card); border-radius:var(--raio); padding:20px; border:1px solid var(--linha); }
+  .card .ic{ width:42px; height:42px; border-radius:12px; background:rgba(124,147,174,.14); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+  .card .ic svg{ width:21px; height:21px; }
+  .card h3{ margin:0 0 6px; font-size:16.5px; }
+  .card p{ margin:0; color:var(--dim); font-size:14.5px; }
+
+  /* ---------- instalar ---------- */
+  .passos{ margin:12px 0 0; padding-left:20px; color:var(--dim); font-size:14.5px; }
+  .passos li{ margin:6px 0; }
+  .passos b{ color:var(--texto); }
+  .card .btn{ margin-top:16px; min-height:46px; font-size:14.5px; width:100%; }
+  .nota{ color:var(--faint); font-size:13px; margin:14px 0 0; }
+
+  /* ---------- planos ---------- */
+  .plano .topo-plano{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .plano h3{ margin:0; }
+  .selo{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--acento-claro); background:rgba(124,147,174,.16); border-radius:20px; padding:4px 9px; }
+  .preco{ margin:10px 0 14px; color:var(--dim); font-size:14px; }
+  .preco b{ font-size:32px; color:var(--texto); margin-right:2px; }
+  .lista{ list-style:none; margin:0; padding:0; display:grid; gap:9px; font-size:14.5px; }
+  .lista li{ display:flex; gap:10px; align-items:flex-start; }
+  .lista svg{ width:16px; height:16px; color:var(--acento); flex-shrink:0; margin-top:3px; }
+  .plano.destaque{ border-color:rgba(124,147,174,.5); background:linear-gradient(180deg, rgba(124,147,174,.12), var(--card) 60%); }
+  .btn-off{ background:var(--track); color:var(--dim); cursor:default; }
+
+  /* ---------- privacidade e rodapé ---------- */
+  .texto p{ color:var(--dim); max-width:720px; }
+  .texto strong{ color:var(--texto); }
+  .docs{ display:grid; gap:0; margin-top:20px; background:var(--card); border-radius:var(--raio); overflow:hidden; }
+  .docs a{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; text-decoration:none; font-weight:600; font-size:15px; }
+  .docs a + a{ border-top:1px solid var(--linha); }
+  .docs svg{ width:16px; height:16px; color:var(--faint); }
+  footer{ max-width:1080px; margin:56px auto 0; padding:24px 20px 8px; border-top:1px solid var(--linha); color:var(--faint); font-size:13.5px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; }
+  footer strong{ color:var(--dim); }
+
+  /* ---------- barra de navegação: a mesma do app (embaixo no celular, lateral no computador) ---------- */
+  .nav{
+    position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+    padding:0 6px env(safe-area-inset-bottom); background:rgba(24,29,38,.94); border-top:1px solid var(--linha);
+    border-radius:24px 24px 0 0; display:flex; justify-content:space-around; align-items:center;
+    -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
+  }
+  .nav a{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; text-decoration:none; color:var(--faint); font-size:11.5px; font-weight:500; min-height:52px; justify-content:center; }
+  .nav a svg{ width:22px; height:22px; }
+  .nav a:hover{ color:var(--texto); }
+  .nav .nav-marca{ display:none; }
+  .nav .centro{ flex:0 0 auto; width:66px; height:66px; min-height:0; border-radius:50%; background:var(--acento); color:var(--sobre-acento); margin-top:-34px; border:6px solid var(--bg); box-shadow:0 8px 24px rgba(124,147,174,.35); }
+  .nav .centro span{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+  .nav .centro:hover{ color:var(--sobre-acento); background:var(--acento-claro); }
+
+  @media (min-width:768px){
+    .grade.g2{ grid-template-columns:1fr 1fr; }
+    .grade.g3{ grid-template-columns:1fr 1fr 1fr; }
+    h2{ font-size:34px; }
+  }
+  @media (min-width:900px){
+    .heroi{ grid-template-columns:1.1fr .9fr; padding-top:56px; }
+  }
+  @media (min-width:1024px){
+    body{ padding:0 0 0 var(--lateral); }
+    .topo .marca{ visibility:hidden; }
+    .nav{
+      top:0; right:auto; width:var(--lateral); height:auto; padding:28px 16px; border-radius:0; border-top:none;
+      border-right:1px solid var(--linha); flex-direction:column; justify-content:flex-start; align-items:stretch; gap:4px;
+      background:var(--bg-dark);
+    }
+    .nav .nav-marca{ display:block; font-size:26px; padding:0 12px 24px; color:var(--texto); }
+    .nav a{ flex:0 0 auto; flex-direction:row; justify-content:flex-start; gap:14px; padding:0 14px; min-height:48px; border-radius:14px; font-size:15px; }
+    .nav a:hover{ background:var(--card); }
+    .nav .centro{ order:10; width:auto; height:52px; margin:18px 0 0; border:none; border-radius:16px; justify-content:center; }
+    .nav .centro span{ position:static; width:auto; height:auto; clip:auto; font-weight:700; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <p class="marca">See<span>All</span></p>
-  <h1>SeeAll: controle de gastos</h1>
-<p><strong>SeeAll</strong> é um aplicativo para Android que organiza as suas finanças pessoais. Você importa os extratos do seu banco (PDF, CSV, OFX ou imagem) e o SeeAll mostra, num lugar só, quanto entrou, quanto saiu e para onde o seu dinheiro foi.</p><h3>O que o SeeAll faz</h3><ul><li>Lê extratos no próprio celular e separa entradas e saídas.</li><li>Se você quiser, registra compras e Pix pelas notificações dos apps de banco.</li><li>Mostra relatórios por categoria e um calendário dos seus gastos.</li><li>Guarda os seus dados na sua conta (e-mail e senha ou Google) e sincroniza entre aparelhos.</li></ul><h3>Login com o Google</h3><p>Se você entrar com o Google, o SeeAll recebe apenas o seu nome e o seu e-mail, usados só para criar e identificar a sua conta. Nada é publicado em seu nome e nada é compartilhado com outras empresas.</p><p>O SeeAll não é banco: não movimenta dinheiro nem acessa as suas contas bancárias. Sem anúncios.</p><h3>Documentos</h3><ul><li><a href="privacidade.html">Política de privacidade</a></li><li><a href="termos.html">Termos de uso</a></li><li><a href="excluir-conta.html">Como excluir a sua conta</a></li></ul><p>Contato: <strong>support@seeall.app.br</strong></p>
-  <nav><a href="privacidade.html">Política de privacidade</a><a href="termos.html">Termos de uso</a><a href="excluir-conta.html">Excluir conta</a></nav>
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+
+<header class="topo" id="topo">
+  <a class="marca" href="#topo" aria-label="SeeAll"><span>See</span><span class="all">All</span></a>
+  <a class="btn-redondo" href="app/">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4.2 3.6-7 8-7s8 2.8 8 7c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1z"/></svg>
+    Entrar
+  </a>
+</header>
+
+<main id="conteudo">
+  <section class="heroi" aria-labelledby="titulo">
+    <div>
+      <p class="rotulo">Controle de gastos</p>
+      <h1 id="titulo">Seu dinheiro explicado <span class="tom">de forma simples.</span></h1>
+      <p class="sub">Importe o extrato do seu banco e o SeeAll mostra, num lugar só, quanto entrou, quanto saiu e para onde o seu dinheiro foi.</p>
+      <div class="acoes">
+        <a class="btn btn-principal" href="app/?instalar=1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 4v11M12 15l-4-4M12 15l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20h14" stroke-linecap="round"/></svg>
+          Instalar o app
+        </a>
+        <a class="btn btn-sec" href="app/">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2.5"/><path d="M8 21h8M12 18v3" stroke-linecap="round"/></svg>
+          Usar no navegador
+        </a>
+      </div>
+      <ul class="selos">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Grátis para começar</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Android, iPhone e computador</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Sem anúncios</li>
+      </ul>
+    </div>
+
+    <div class="aparelho" role="img" aria-label="A tela inicial do SeeAll: saídas de R$ 469,30, entradas de R$ 602,90, a maior categoria de gastos e as últimas transações.">
+      <div class="tela" aria-hidden="true">
+        <div class="t-topo">
+          <div class="t-ola">Olá, <b>Ana.</b></div>
+          <div class="t-bot">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span>
+            <span><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20.5c0-4.2 3.6-7 8-7s8 2.8 8 7c0 .6-.4 1-1 1H5c-.6 0-1-.4-1-1z"/></svg></span>
+          </div>
+        </div>
+        <div class="t-saldo">
+          <div class="t-rot">SAÍDAS <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div class="t-valor titulo-num">R$ 469,30</div>
+          <div class="t-nota">Quanto saiu, com base no que você importou</div>
+        </div>
+        <div class="t-mov">
+          <div class="t-rot">MOVIMENTAÇÃO</div>
+          <div class="t-linha">ENTROU <b>R$ 602,90</b></div>
+          <div class="t-barra ent"><i style="width:100%"></i></div>
+          <div class="t-linha">SAIU <b>R$ 469,30</b></div>
+          <div class="t-barra"><i style="width:78%"></i></div>
+        </div>
+        <div class="t-insight">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.2 10.5a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L19.5 8H6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg></span>
+          <span>Sua maior categoria de gastos foi <b>Mercado</b>, com R$ 274,92.</span>
+        </div>
+        <div class="t-tx-h"><b>Últimas Transações</b><span>ver todas</span></div>
+        <div class="t-tx">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v8a2 2 0 0 0 2 2v8M11 3v8M15 3c-1.5 0-2 2.5-2 5s.8 4 2 4v9" stroke-linecap="round"/></svg>
+          <div><b>Pix enviado</b><small>22/10/2026 • 20:09</small></div><span>- R$ 36,88</span>
+        </div>
+        <div class="t-tx">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 9-9 9-9-9z" stroke-linejoin="round"/></svg>
+          <div><b>Pix recebido</b><small>22/10/2026 • 18:03</small></div><span class="in">+ R$ 480,00</span>
+        </div>
+        <div class="t-tx">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h2l2.2 10.5a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L19.5 8H6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div><b>Supermercado</b><small>22/10/2026 • 15:39</small></div><span>- R$ 34,00</span>
+        </div>
+        <div class="t-nav">
+          <span class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke-linejoin="round"/></svg>Início</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round"/></svg>Transações</span>
+          <span class="centro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 4v11M12 15l-4-4M12 15l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20h14" stroke-linecap="round"/></svg></span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 19V9M12 19V5M19 19v-7" stroke-linecap="round"/></svg>Relatórios</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4" stroke-linecap="round"/></svg>Calendário</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="recursos" aria-labelledby="recursos-titulo">
+    <p class="rotulo">O que o SeeAll faz</p>
+    <h2 id="recursos-titulo">Tudo o que você tem no app</h2>
+    <div class="grade g3">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v11M12 15l-4-4M12 15l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20h14" stroke-linecap="round"/></svg></div>
+        <h3>Importar extratos</h3>
+        <p>PDF, CSV, OFX ou foto do extrato. A leitura acontece no seu aparelho e separa entradas e saídas.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round"/></svg></div>
+        <h3>Transações</h3>
+        <p>Busca, filtros por período, categoria e banco, e o detalhe de cada movimentação.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 19V9M12 19V5M19 19v-7" stroke-linecap="round"/></svg></div>
+        <h3>Relatórios</h3>
+        <p>Para onde foi o seu dinheiro e de onde ele veio, por categoria, mês a mês.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4" stroke-linecap="round"/></svg></div>
+        <h3>Calendário</h3>
+        <p>Seus gastos dia a dia. Toque numa data para ver o que aconteceu.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" stroke-linejoin="round"/><path d="M10 20a2 2 0 0 0 4 0" stroke-linecap="round"/></svg></div>
+        <h3>Notificações do banco</h3>
+        <p>No Android, se você quiser, compras e Pix entram sozinhos a partir das notificações dos apps de banco.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 12a8 8 0 0 0-14-5.3L4 9M4 4v5h5M4 12a8 8 0 0 0 14 5.3L20 15M20 20v-5h-5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h3>Na sua conta</h3>
+        <p>Entre com e-mail e senha ou com o Google. Seus dados sincronizam entre celular e computador.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="instalar" aria-labelledby="instalar-titulo">
+    <p class="rotulo">Baixar o app</p>
+    <h2 id="instalar-titulo">Instale em um minuto</h2>
+    <p class="sub">O SeeAll se instala direto do navegador, sem loja: ganha ícone na tela inicial e abre em tela cheia, como qualquer app.</p>
+    <div class="grade g3">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M11 18h2" stroke-linecap="round"/></svg></div>
+        <h3>Android</h3>
+        <ol class="passos">
+          <li>Abra este site no <b>Chrome</b>.</li>
+          <li>Toque em <b>Instalar o app</b> e confirme em <b>Instalar</b>.</li>
+          <li>Se o aviso não aparecer: menu <b>⋮</b> › <b>Adicionar à tela inicial</b>.</li>
+        </ol>
+        <a class="btn btn-principal" href="app/?instalar=1">Instalar no Android</a>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M10.5 5.5h3" stroke-linecap="round"/></svg></div>
+        <h3>iPhone e iPad</h3>
+        <ol class="passos">
+          <li>Abra este site no <b>Safari</b>.</li>
+          <li>Toque em <b>Compartilhar</b> (o quadrado com a seta para cima).</li>
+          <li>Escolha <b>Adicionar à Tela de Início</b> e toque em <b>Adicionar</b>.</li>
+        </ol>
+        <a class="btn btn-sec" href="app/?instalar=1">Ver como instalar</a>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20" stroke-linecap="round"/></svg></div>
+        <h3>Computador</h3>
+        <ol class="passos">
+          <li>Abra este site no <b>Chrome</b> ou no <b>Edge</b>.</li>
+          <li>Clique em <b>Instalar o app</b>, ou no ícone de instalar na barra de endereço.</li>
+          <li>O SeeAll abre numa janela própria, com a barra lateral.</li>
+        </ol>
+        <a class="btn btn-sec" href="app/?instalar=1">Instalar no computador</a>
+      </div>
+    </div>
+    <p class="nota">Prefere não instalar? Tudo funciona igual em <a href="app/">seeall.app.br/app</a>.</p>
+  </section>
+
+  <section id="planos" aria-labelledby="planos-titulo">
+    <p class="rotulo">Planos</p>
+    <h2 id="planos-titulo">Comece de graça</h2>
+    <p class="sub">A diferença entre os planos é quantos extratos você importa por mês. Todo o resto do app é igual.</p>
+    <div class="grade g2">
+      <div class="card plano">
+        <div class="topo-plano"><h3>Gratuito</h3><span class="selo">Para começar</span></div>
+        <div class="preco"><b class="titulo-num">R$ 0</b>/mês</div>
+        <ul class="lista">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>5 extratos por mês</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Até 5 páginas por arquivo</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Relatórios, calendário e categorias</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Seus dados em todos os aparelhos</li>
+        </ul>
+        <a class="btn btn-principal" href="app/">Criar conta grátis</a>
+      </div>
+      <div class="card plano destaque">
+        <div class="topo-plano"><h3>SeeAll Plus</h3><span class="selo">Em breve</span></div>
+        <div class="preco"><b class="titulo-num">R$ 19,90</b>/mês</div>
+        <ul class="lista">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>25 extratos por mês</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Até 25 páginas por arquivo</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Tudo do plano Gratuito</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Ajuda a manter o SeeAll sem anúncios</li>
+        </ul>
+        <span class="btn btn-off" aria-disabled="true">Em breve</span>
+      </div>
+    </div>
+    <p class="nota">A assinatura ainda não está à venda: hoje ninguém é cobrado. Só conta o extrato importado até o fim; arquivo com erro, importação cancelada ou o mesmo arquivo de novo no mês não contam.</p>
+  </section>
+
+  <section id="privacidade" class="texto" aria-labelledby="privacidade-titulo">
+    <p class="rotulo">Privacidade</p>
+    <h2 id="privacidade-titulo">Seus dados, do seu jeito</h2>
+    <p>O SeeAll <strong>não é banco</strong>: não movimenta dinheiro nem acessa as suas contas bancárias. Os extratos são lidos <strong>no seu aparelho</strong>, e o que fica guardado na sua conta é protegido para que só você veja. Sem anúncios.</p>
+    <p><strong>Login com o Google:</strong> se você entrar com o Google, o SeeAll recebe apenas o seu nome e o seu e-mail, usados só para criar e identificar a sua conta. Nada é publicado em seu nome e nada é compartilhado com outras empresas.</p>
+    <div class="docs">
+      <a href="privacidade.html">Política de privacidade<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="termos.html">Termos de uso<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <a href="excluir-conta.html">Como excluir a sua conta<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <span>Contato: <strong>support@seeall.app.br</strong></span>
+  <span>SeeAll · Seu dinheiro explicado de forma simples.</span>
+</footer>
+
+<nav class="nav" aria-label="Navegação do site">
+  <a class="marca nav-marca" href="#topo" aria-label="SeeAll"><span>See</span><span class="all">All</span></a>
+  <a href="#topo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" stroke-linejoin="round"/></svg>Início</a>
+  <a href="#recursos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round"/></svg>Recursos</a>
+  <a class="centro" href="app/?instalar=1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M12 4v11M12 15l-4-4M12 15l4-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 20h14" stroke-linecap="round"/></svg><span>Instalar o app</span></a>
+  <a href="#planos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke-linejoin="round"/></svg>Planos</a>
+  <a href="app/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 16l4-4-4-4M18 12H9" stroke-linecap="round" stroke-linejoin="round"/></svg>Entrar</a>
+</nav>
 </body>
 </html>

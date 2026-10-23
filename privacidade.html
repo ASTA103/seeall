@@ -5,28 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Política de privacidade · SeeAll</title>
 <meta name="description" content="Política de privacidade do aplicativo SeeAll.">
+<meta name="theme-color" content="#0F1218">
+<link rel="icon" href="app/icons/icon-192.png">
+<!-- (2.3.47) mesmo visual do app e da página inicial (paleta Neblina); sem script -->
 <style>
-  :root{ --bg:#F3F1EC; --texto:#1A1A1A; --suave:#5C5A55; --linha:rgba(0,0,0,.09); --laranja:#A84B16; }
-  @media (prefers-color-scheme: dark){ :root{ --bg:#111111; --texto:#F2F0EA; --suave:#A7A5A0; --linha:rgba(255,255,255,.1); --laranja:#E8823F; } }
+  :root{ --bg:#0F1218; --bg-dark:#181D26; --card:#212836; --texto:#F5F2EA; --suave:#A9B0BC; --faint:#7A8292; --linha:rgba(245,242,234,.08); --acento:#7C93AE; --acento-claro:#A5B6CA; --sobre-acento:#0F1218; }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--bg); color:var(--texto); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
-  main{ max-width:720px; margin:0 auto; padding:40px 20px 64px; }
-  .marca{ font-weight:700; font-size:22px; letter-spacing:-.01em; margin:0 0 28px; color:var(--texto); }
-  .marca span{ color:var(--laranja); }
-  h1{ font-size:28px; line-height:1.25; margin:0 0 6px; letter-spacing:-.01em; }
+  body{ margin:0; background:var(--bg); color:var(--texto); font:16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing:antialiased; }
+  .barra{ position:sticky; top:0; z-index:5; background:rgba(15,18,24,.92); -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px); border-bottom:1px solid var(--linha); }
+  .barra div{ max-width:720px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .voltar{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:14px; background:var(--card); border:1px solid var(--linha); color:var(--texto); }
+  .voltar svg{ width:18px; height:18px; }
+  .marca{ font-weight:800; font-size:20px; letter-spacing:-.02em; color:var(--texto); text-decoration:none; }
+  .marca span{ color:var(--acento); margin-left:.18em; }
+  .abrir{ display:inline-flex; align-items:center; min-height:44px; padding:0 16px; border-radius:22px; background:var(--acento); color:var(--sobre-acento); font-weight:700; font-size:14px; text-decoration:none; }
+  main{ max-width:720px; margin:0 auto; padding:28px 20px 64px; }
+  h1{ font-size:30px; line-height:1.2; margin:0 0 6px; letter-spacing:-.02em; }
   h3{ font-size:17px; margin:30px 0 8px; }
   p, li{ color:var(--suave); }
   strong{ color:var(--texto); }
+  a{ color:var(--acento-claro); }
   ul, ol{ padding-left:22px; } li{ margin:6px 0; }
-  .legal-vigencia{ font-size:14px; margin:0 0 22px; }
-  nav{ margin-top:40px; padding-top:18px; border-top:1px solid var(--linha); font-size:14px; }
-  nav a{ color:var(--laranja); margin-right:18px; text-decoration:none; }
+  .legal-vigencia{ font-size:14px; margin:0 0 22px; color:var(--faint); }
+  nav{ margin-top:40px; padding-top:18px; border-top:1px solid var(--linha); font-size:14px; display:flex; flex-wrap:wrap; gap:8px 18px; }
+  nav a{ color:var(--acento-claro); text-decoration:none; }
   nav a:hover{ text-decoration:underline; }
+  :focus-visible{ outline:2px solid var(--acento-claro); outline-offset:3px; border-radius:8px; }
 </style>
 </head>
 <body>
+<header class="barra"><div>
+  <a class="voltar" href="./" aria-label="Voltar para o início"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+  <a class="marca" href="./">See<span>All</span></a>
+  <a class="abrir" href="app/">Abrir o app</a>
+</div></header>
 <main>
-  <p class="marca">See<span>All</span></p>
   <h1>Política de privacidade</h1>
 <p class="legal-vigencia">Em vigor desde 18 de outubro de 2026.</p>
 <p>Esta política explica quais dados o SeeAll usa, por que usa e como você controla tudo isso. Ela segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>
@@ -56,7 +69,7 @@
 <h3>10. Mudanças nesta política</h3>
 <p>Quando esta política mudar, avisaremos no app. A data no topo indica a versão em vigor.</p>
 <h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>
-  <nav><a href="privacidade.html">Política de privacidade</a><a href="termos.html">Termos de uso</a><a href="excluir-conta.html">Excluir conta</a></nav>
+  <nav><a href="./">Início</a><a href="privacidade.html">Política de privacidade</a><a href="termos.html">Termos de uso</a><a href="excluir-conta.html">Excluir conta</a></nav>
 </main>
 </body>
 </html>

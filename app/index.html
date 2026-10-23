@@ -261,6 +261,27 @@ document.documentElement.setAttribute('data-auth','gate');})();
     background:linear-gradient(90deg, var(--orange), var(--accent-light));
   }
   #bar-entrou{ background:linear-gradient(90deg, var(--accent-2), var(--accent-2-light)); }
+  /* (2.3.47) título do valor em destaque vira botão (Saídas / Entradas / Saldo) e as barras levam a Relatórios */
+  button.balance-label{
+    display:inline-flex; align-items:center; gap:6px; background:none; border:none; padding:6px 0; margin:-6px 0 2px;
+    font-family:inherit; cursor:pointer; min-height:32px;
+  }
+  button.balance-label svg{ opacity:.8; }
+  button.mov-row{
+    display:block; width:100%; background:none; border:none; padding:4px 0; margin:-4px 0 8px;
+    font-family:inherit; color:inherit; text-align:left; cursor:pointer; border-radius:8px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  button.mov-row:last-child{ margin-bottom:-4px; }
+  button.mov-row .top, button.mov-row .bar-track, button.mov-row .bar-fill{ display:block; }
+  button.mov-row .top{ display:flex; }
+  button.mov-row:active{ opacity:.7; }
+  button.balance-label:focus-visible, button.mov-row:focus-visible{ outline:2px solid var(--orange); outline-offset:3px; border-radius:6px; }
+  @media (hover:hover){ button.mov-row:hover .top{ color:var(--text-white); } button.balance-label:hover{ color:var(--text-dim); } }
+  .saldo-modo-txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .saldo-modo-nome{ font-weight:600; }
+  .saldo-modo-sub{ font-size:12px; color:var(--text-dim); }
+  .rel-tipo + .rel-overview{ padding-top:16px; }
 
   /* ---------- INSIGHT CAROUSEL ---------- */
   .insight-wrap{ margin:20px 0 4px; padding-left:16px; }
@@ -827,6 +848,17 @@ document.documentElement.setAttribute('data-auth','gate');})();
     font-weight:600;
     color:var(--text-dim);
   }
+  /* (2.3.47) Relatórios: Saídas × Entradas; ENTROU/SAIU também trocam a visão */
+  .rel-tipo{ padding:18px 20px 0; }
+  .rel-tipo .quick-filter{ font-size:12px; padding:8px 14px; cursor:pointer; }
+  button.rel-overview-item{
+    background:none; border:none; padding:0; margin:0; font-family:inherit; text-align:left; cursor:pointer;
+    color:inherit; border-bottom:2px solid transparent; padding-bottom:6px;
+  }
+  button.rel-overview-item .lbl, button.rel-overview-item .val{ display:block; }
+  button.rel-overview-item.ativo{ border-bottom-color:var(--orange); }
+  button.rel-overview-item.ativo .val{ color:var(--text-white); }
+  button.rel-overview-item:focus-visible, .rel-tipo .quick-filter:focus-visible{ outline:2px solid var(--orange); outline-offset:3px; border-radius:6px; }
   .rel-divider{
     height:1px;
     background:rgba(var(--ink-rgb),0.07);
@@ -1069,6 +1101,10 @@ document.documentElement.setAttribute('data-auth','gate');})();
   /* Legenda discreta do limite de arquivos (Tela 1) */
   .import-batch-hint{ text-align:center; font-size:11.5px; color:var(--text-faint); margin-top:16px; }
   .import-cota{ margin-top:6px; } /* (2.3.46) plano e cota do mês */
+  .import-ver-planos{ /* (2.3.47) */
+    display:block; margin:4px auto 0; background:none; border:none; padding:8px 12px; min-height:36px;
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--accent-text); cursor:pointer;
+  }
 
   /* Tela 2 (lote) — cabeçalho com contagem */
   .import-batch-head{ margin:2px 2px 18px; }
@@ -1920,6 +1956,44 @@ document.documentElement.setAttribute('data-auth','gate');})();
   }
   .cfg-danger-btn:focus-visible{ outline:2px solid var(--text-white); outline-offset:2px; }
 
+  /* ---------- (2.3.47) Planos e assinatura ---------- */
+  .planos-atual{
+    background:var(--bg-card); border-radius:var(--radius-lg); padding:18px 18px 16px; margin-top:4px;
+  }
+  .planos-atual-rotulo{ font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-faint); }
+  .planos-atual-nome{ font-family:'Space Grotesk', sans-serif; font-size:26px; font-weight:700; margin:4px 0 14px; }
+  .planos-uso[hidden]{ display:none; }
+  .planos-uso-txt{ display:flex; justify-content:space-between; gap:12px; font-size:12.5px; color:var(--text-dim); margin-bottom:7px; }
+  .planos-uso-txt b{ color:var(--text-white); font-weight:600; }
+  .planos-atual-nota{ font-size:12px; color:var(--text-dim); line-height:1.45; margin-top:12px; }
+  .planos-lista{ display:grid; gap:12px; margin-top:16px; }
+  .plano-card{
+    background:var(--bg-card); border-radius:var(--radius-lg); padding:18px;
+    border:1px solid rgba(var(--ink-rgb),0.06);
+  }
+  .plano-card.destaque{ border-color:rgba(var(--accent-rgb),0.45); background:linear-gradient(180deg, rgba(var(--accent-rgb),0.10), var(--bg-card) 60%); }
+  .plano-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .plano-nome{ font-size:15px; font-weight:700; }
+  .plano-selo{
+    font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent-text); background:var(--orange-soft); border-radius:20px; padding:4px 9px;
+  }
+  .plano-preco{ margin:8px 0 12px; color:var(--text-dim); font-size:13px; }
+  .plano-preco b{ font-family:'Space Grotesk', sans-serif; font-size:28px; font-weight:700; color:var(--text-white); margin-right:2px; }
+  .plano-recursos{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+  .plano-recursos li{ display:flex; gap:9px; align-items:flex-start; font-size:13.5px; line-height:1.4; color:var(--text-white); }
+  .plano-recursos svg{ flex-shrink:0; margin-top:2px; color:var(--orange); }
+  .plano-btn{
+    display:block; width:100%; margin-top:16px; border:none; border-radius:12px; padding:13px;
+    font-family:inherit; font-size:13.5px; font-weight:700; background:var(--orange); color:var(--on-accent); cursor:pointer;
+  }
+  .plano-btn:disabled{ background:var(--bg-track); color:var(--text-dim); cursor:default; }
+  .plano-nota{ font-size:11.5px; color:var(--text-faint); text-align:center; margin:8px 0 0; }
+  .planos-duvidas{ padding:4px 0; }
+  .planos-duvida{ padding:12px 16px; font-size:12.5px; line-height:1.45; color:var(--text-dim); }
+  .planos-duvida + .planos-duvida{ border-top:1px solid rgba(var(--ink-rgb),0.07); }
+  .planos-duvida b{ display:block; color:var(--text-white); font-size:13.5px; margin-bottom:2px; }
+
   /* ---------- Meu perfil ---------- */
   .avatar-btn{ overflow:hidden; padding:0; cursor:pointer; }
   .avatar-btn img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -2335,6 +2409,7 @@ document.documentElement.setAttribute('data-auth','gate');})();
     .aba-marca{ max-width:720px; }
     .cfg-page, .crop-page{ max-width:640px; }
     .insight-card{ flex-basis:calc(50% - 26px); }
+    .planos-lista{ grid-template-columns:1fr 1fr; align-items:start; } /* (2.3.47) planos lado a lado */
   }
 
   /* ---------- desktop (a partir de 1024 px) ---------- */
@@ -2499,6 +2574,7 @@ document.documentElement.setAttribute('data-auth','gate');})();
 
     /* camadas de tela cheia (perfil, configurações, recorte) e elementos fixos */
     .cfg-page, .crop-page{ max-width:720px; }
+    .planos-lista{ grid-template-columns:1fr 1fr; align-items:start; } /* (2.3.47) planos lado a lado */
     .aba-marca{ left:var(--sidebar-w); max-width:none; }
     .ptr{ left:calc(50% + var(--sidebar-w) / 2); }
   }
@@ -2530,6 +2606,11 @@ document.documentElement.setAttribute('data-auth','gate');})();
   .instalar-passos{ margin:4px 0 12px 20px; display:flex; flex-direction:column; gap:10px; }
   .instalar-nota{ margin:0 0 12px; }
   .instalar-nota:last-child{ margin-bottom:0; }
+  /* (2.3.47) vindo do site (app/?instalar=1) o modal pode abrir sobre a tela de entrar (auth-gate, z 80) */
+  #instalar-modal{ z-index:90; }
+  .instalar-agora{ margin-top:6px; }
+  .auth-instalar{ margin-top:6px; }
+  .auth-instalar[hidden]{ display:none; }
   .pwa-atualizar{
     position:fixed; z-index:45; /* acima das telas e das Configurações (40), abaixo dos diálogos (50) */
     left:50%; transform:translateX(-50%);
@@ -2685,6 +2766,7 @@ document.documentElement.setAttribute('data-auth','gate');})();
     <footer class="auth-rodape">
       <p>Ainda não tem conta? <button class="auth-link" id="auth-ir-cadastro" type="button">Criar uma conta</button></p>
       <p class="auth-modo-local" data-auth-modo-local hidden>Modo local de teste: as contas ficam salvas só neste aparelho.</p>
+      <p class="auth-instalar" id="auth-instalar-linha" hidden><button class="auth-link" id="auth-instalar" type="button">Instalar o SeeAll neste aparelho</button></p><!-- (2.3.47) só no navegador -->
     </footer>
   </section>
 
@@ -3667,19 +3749,21 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     </div>
 
     <div class="balance-card">
-      <div class="balance-label">SALDO</div>
+      <!-- (2.3.47) o número grande mostra saídas (padrão), entradas ou o saldo; o título abre a escolha -->
+      <button type="button" class="balance-label" id="dash-saldo-modo" aria-haspopup="dialog"><span id="dash-saldo-rotulo">SAÍDAS</span><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="balance-value" id="dash-saldo">R$ 0,00</div>
-      <div class="balance-note">Com base no que você importou</div>
+      <div class="balance-note" id="dash-saldo-nota">Com base no que você importou</div>
 
       <div class="mov-label">MOVIMENTAÇÃO</div>
-      <div class="mov-row">
-        <div class="top">ENTROU <b id="dash-entrou">R$ 0,00</b></div>
-        <div class="bar-track"><div class="bar-fill" id="bar-entrou" style="width:100%"></div></div>
-      </div>
-      <div class="mov-row">
-        <div class="top">SAIU <b id="dash-saiu">R$ 0,00</b></div>
-        <div class="bar-track"><div class="bar-fill" id="bar-saiu" style="width:60%"></div></div>
-      </div>
+      <!-- (2.3.47) tocar em ENTROU/SAIU abre as entradas/saídas em Relatórios -->
+      <button type="button" class="mov-row" id="mov-entrou" aria-label="Ver entradas em Relatórios">
+        <span class="top">ENTROU <b id="dash-entrou">R$ 0,00</b></span>
+        <span class="bar-track"><span class="bar-fill" id="bar-entrou" style="width:100%"></span></span>
+      </button>
+      <button type="button" class="mov-row" id="mov-saiu" aria-label="Ver saídas em Relatórios">
+        <span class="top">SAIU <b id="dash-saiu">R$ 0,00</b></span>
+        <span class="bar-track"><span class="bar-fill" id="bar-saiu" style="width:60%"></span></span>
+      </button>
     </div>
 
     <!-- (2.3.44) gasto que se repete (notificações) -->
@@ -3832,6 +3916,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       <input type="file" id="import-file-input-img" accept=".png,.jpg,.jpeg,.webp" multiple style="display:none;">
       <div class="import-batch-hint" id="import-batch-hint">Você pode selecionar até 10 arquivos por vez</div><!-- (2.3.46) o número segue o plano -->
       <div class="import-batch-hint import-cota" id="import-cota" hidden></div><!-- (2.3.46) plano e cota do mês -->
+      <button type="button" class="import-ver-planos" id="import-ver-planos" data-abrir-planos>Ver planos</button><!-- (2.3.47) -->
     </div>
 
     <!-- Tela 2: arquivos selecionados (lote de até 5) -->
@@ -4135,6 +4220,19 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     </div>
   </div>
 
+  <!-- ===================== (2.3.47) MODAL: O QUE O INÍCIO MOSTRA (saídas, entradas ou saldo) ===================== -->
+  <div class="modal-backdrop" id="saldo-modo-modal" role="dialog" aria-modal="true" aria-labelledby="saldo-modo-titulo">
+    <div class="modal-sheet">
+      <div class="modal-head">
+        <div class="modal-title" id="saldo-modo-titulo">Valor em destaque no Início</div>
+        <button class="modal-close" id="saldo-modo-fechar" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="option-picker-list" id="saldo-modo-lista" role="radiogroup" aria-labelledby="saldo-modo-titulo"></div>
+    </div>
+  </div>
+
   <!-- (2.3.45) aviso de versão nova do app instalado (PWA) -->
   <div class="pwa-atualizar" id="pwa-atualizar" role="status" aria-live="polite" hidden>
     <span>Há uma versão nova do SeeAll.</span>
@@ -4434,6 +4532,16 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       </div>
     </div>
 
+    <!-- (2.3.47) plano e assinatura -->
+    <div class="cfg-section-label" id="perfil-sec-plano">Assinatura</div>
+    <div class="cfg-group" role="group" aria-labelledby="perfil-sec-plano">
+      <button class="cfg-item" id="perfil-plano" type="button" data-abrir-planos>
+        <span class="cfg-icn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke-linejoin="round"/></svg></span>
+        <span class="cfg-txt"><span class="cfg-item-title" data-plano-nome>Plano Gratuito</span><span class="cfg-item-sub" data-plano-uso>Veja o que cada plano oferece</span></span>
+        <span class="cfg-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </button>
+    </div>
+
     <div class="cfg-section-label" id="perfil-sec-aparencia">Aparência</div>
     <div class="cfg-group" role="group" aria-labelledby="perfil-sec-aparencia">
       <div class="perfil-bloco">
@@ -4570,6 +4678,11 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         <span class="cfg-txt"><span class="cfg-item-title">Ocultar valores ao abrir</span><span class="cfg-item-sub">Esconde saldos e valores em todo o app</span></span>
         <span class="cfg-switch" aria-hidden="true"></span>
       </button>
+      <button class="cfg-item" id="cfg-saldo-modo" type="button" aria-haspopup="dialog"><!-- (2.3.47) -->
+        <span class="cfg-icn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18h16" stroke-linecap="round"/><path d="M7 14V9M12 14V5M17 14v-3" stroke-linecap="round"/></svg></span>
+        <span class="cfg-txt"><span class="cfg-item-title">Valor em destaque no Início</span><span class="cfg-item-sub" id="cfg-saldo-modo-sub">Saídas</span></span>
+        <span class="cfg-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      </button>
       <button class="cfg-item" id="cfg-lembrete" type="button" role="switch" aria-checked="false" hidden>
         <span class="cfg-icn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4" stroke-linecap="round"/><path d="M12 13.5v3" stroke-linecap="round"/></svg></span>
         <span class="cfg-txt"><span class="cfg-item-title">Lembrete mensal</span><span class="cfg-item-sub">Todo dia 3, às 10h, para importar o extrato do mês</span></span>
@@ -4584,6 +4697,15 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         <span class="cfg-icn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6" stroke-linecap="round"/></svg></span>
         <span class="cfg-txt"><span class="cfg-item-title">Vibração ao tocar</span><span class="cfg-item-sub">Vibra de leve em botões e opções</span></span>
         <span class="cfg-switch" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div class="cfg-section-label" id="cfg-sec-plano">Assinatura</div><!-- (2.3.47) -->
+    <div class="cfg-group" role="group" aria-labelledby="cfg-sec-plano">
+      <button class="cfg-item" id="cfg-planos" type="button" data-abrir-planos>
+        <span class="cfg-icn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" stroke-linejoin="round"/></svg></span>
+        <span class="cfg-txt"><span class="cfg-item-title">Planos e assinatura</span><span class="cfg-item-sub" data-plano-uso>Gratuito e SeeAll Plus</span></span>
+        <span class="cfg-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       </button>
     </div>
 
@@ -4692,6 +4814,38 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     <div class="cfg-foot">
       <div class="seeall-wordmark" aria-label="SeeAll"><span class="see">See</span><span class="all">All</span></div>
       <div class="cfg-version" id="cfg-version"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== (2.3.47) PLANOS E ASSINATURA ===================== -->
+<div class="cfg-layer" id="planos-layer" role="dialog" aria-modal="true" aria-labelledby="planos-title" hidden>
+  <div class="cfg-page planos-page">
+    <div class="cfg-head">
+      <button class="cfg-back" id="planos-back" type="button" aria-label="Voltar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 class="cfg-title" id="planos-title">Planos</h2>
+      <span aria-hidden="true"></span>
+    </div>
+
+    <div class="planos-atual" id="planos-atual">
+      <div class="planos-atual-rotulo">Seu plano</div>
+      <div class="planos-atual-nome" id="planos-atual-nome">Gratuito</div>
+      <div class="planos-uso" id="planos-uso">
+        <div class="planos-uso-txt"><span id="planos-uso-txt">Extratos importados este mês</span><b id="planos-uso-num"></b></div>
+        <div class="bar-track"><div class="bar-fill" id="planos-uso-barra" style="width:0%"></div></div>
+      </div>
+      <div class="planos-atual-nota" id="planos-atual-nota">A contagem recomeça no dia 1º de cada mês.</div>
+    </div>
+
+    <div class="planos-lista" id="planos-lista"></div>
+
+    <div class="cfg-section-label" id="planos-sec-duvidas">Como a contagem funciona</div>
+    <div class="cfg-group planos-duvidas" role="group" aria-labelledby="planos-sec-duvidas">
+      <div class="planos-duvida"><b>O que conta</b><span>Cada extrato importado até o fim (PDF, CSV, OFX ou imagem) conta como um arquivo.</span></div>
+      <div class="planos-duvida"><b>O que não conta</b><span>Arquivo que deu erro, importação cancelada e o mesmo arquivo importado de novo no mesmo mês.</span></div>
+      <div class="planos-duvida"><b>Seus dados</b><span>A leitura dos extratos acontece no seu aparelho em qualquer plano. Sem anúncios.</span></div>
     </div>
   </div>
 </div>
@@ -6513,7 +6667,7 @@ function cardTransacoesDoIntervalo(iv){
 }
 function cardMesDados(){
   const iv = cardIntervalo();
-  const r = calcularRelatorio(iv ? cardTransacoesDoIntervalo(iv) : undefined);
+  const r = calcularRelatorio(iv ? cardTransacoesDoIntervalo(iv) : undefined, 'saida'); // (2.3.47) o card é sempre dos gastos
   let periodo, sub, subPct, vazio;
   if(iv){
     periodo = cardRotuloIntervalo(iv);
@@ -7035,9 +7189,10 @@ let relYear = new Date().getFullYear();
 let relTodoPeriodo = false; // (2.1.43) true = soma todas as transações, sem recorte de mês
 let relCategoriaSelecionada = null;
 let relCategoriasExcluidas = new Set();
+let relTipo = 'saida'; // (2.3.47) 'saida' = para onde foi o dinheiro; 'entrada' = de onde ele veio
 
 function categoriasDisponiveisRelatorio(){
-  return [...new Set(transacoes.filter(t=>t.tipo==='saida' && contaNosTotais(t)).map(t=>t.categoria).filter(Boolean))]
+  return [...new Set(transacoes.filter(t=>t.tipo===relTipo && contaNosTotais(t)).map(t=>t.categoria).filter(Boolean))]
     .sort((a,b)=>a.localeCompare(b,'pt-BR'));
 }
 function categoriaVisivelNoRelatorio(categoria){
@@ -7052,10 +7207,11 @@ function transacoesDoMesRelatorio(){
   });
 }
 
-function calcularRelatorio(lista){
+function calcularRelatorio(lista, tipo){
   const doMes = lista || transacoesDoMesRelatorio(); // (2.3.43) lista = outro período (dia/semana do compartilhar)
+  tipo = tipo || relTipo; // (2.3.47) saídas ou entradas, por categoria
   const { entrou, saiu } = calcularResumo(doMes);
-  const gastos = doMes.filter(t=>t.tipo==='saida' && contaNosTotais(t) && categoriaVisivelNoRelatorio(t.categoria));
+  const gastos = doMes.filter(t=>t.tipo===tipo && contaNosTotais(t) && categoriaVisivelNoRelatorio(t.categoria));
 
   const totais = new Map();
   gastos.forEach(t=>{ totais.set(t.categoria, (totais.get(t.categoria)||0) + t.valor); });
@@ -7075,7 +7231,7 @@ function calcularRelatorio(lista){
     categorias = [...principais, { categoria:rotuloGrupo, valor:somaOutros, agrupado:true }];
   }
 
-  return { entrou, saiu, totalGasto: saiu, categorias, outrosMembros, gastos };
+  return { entrou, saiu, totalGasto: tipo==='entrada' ? entrou : saiu, categorias, outrosMembros, gastos, tipo };
 }
 
 function transacoesDaCategoria(cat, gastosDoPeriodo){
@@ -7108,13 +7264,28 @@ function renderRelatorios(){
 
   const r = calcularRelatorio();
 
+  const ent = r.tipo === 'entrada';
+  // (2.3.47) Saídas × Entradas: os dois totais também trocam a visão ao toque
+  const tipoBox = document.createElement('div');
+  tipoBox.className = 'quick-filters rel-tipo';
+  tipoBox.setAttribute('role', 'group');
+  tipoBox.setAttribute('aria-label', 'Ver saídas ou entradas');
+  tipoBox.innerHTML = `<button type="button" class="quick-filter${ent?'':' active'}" data-rel-tipo="saida" aria-pressed="${!ent}">Saídas</button><button type="button" class="quick-filter${ent?' active':''}" data-rel-tipo="entrada" aria-pressed="${ent}">Entradas</button>`;
+  content.appendChild(tipoBox);
+
   const overview = document.createElement('div');
   overview.className = 'rel-overview';
   overview.innerHTML = `
-    <div class="rel-overview-item"><div class="lbl">ENTROU</div><div class="val">${formatBRL(r.entrou)}</div></div>
-    <div class="rel-overview-item"><div class="lbl">SAIU</div><div class="val">${formatBRL(r.saiu)}</div></div>
+    <button type="button" class="rel-overview-item${ent?' ativo':''}" data-rel-tipo="entrada" aria-pressed="${ent}"><span class="lbl">ENTROU</span><span class="val">${formatBRL(r.entrou)}</span></button>
+    <button type="button" class="rel-overview-item${ent?'':' ativo'}" data-rel-tipo="saida" aria-pressed="${!ent}"><span class="lbl">SAIU</span><span class="val">${formatBRL(r.saiu)}</span></button>
   `;
   content.appendChild(overview);
+  content.querySelectorAll('[data-rel-tipo]').forEach(b=> b.addEventListener('click', ()=>{
+    if(b.dataset.relTipo === relTipo) return;
+    relTipo = b.dataset.relTipo;
+    if(typeof seeallVibrar === 'function') seeallVibrar();
+    renderRelatorios();
+  }));
 
   const divider = document.createElement('div');
   divider.className = 'rel-divider';
@@ -7128,6 +7299,7 @@ function renderRelatorios(){
     empty.style.textAlign = 'left';
     empty.innerHTML = filtroAtivo
       ? '<b>Nenhum gasto com os filtros aplicados</b>Ajuste as categorias selecionadas para ver dados aqui.<br><button id="rel-empty-adjust-cat">Ajustar categorias</button>'
+      : ent ? `<b>Nenhuma entrada neste período</b>${relTodoPeriodo ? 'Ainda não há entradas registradas.' : `Sem entradas registradas em ${MESES_TX[relMonth].toLowerCase()}.`}`
       : `<b>Nenhum gasto neste período</b>${relTodoPeriodo ? 'Ainda não há gastos registrados.' : `Sem gastos registrados em ${MESES_TX[relMonth].toLowerCase()}.`}`;
     content.appendChild(empty);
     if(filtroAtivo){
@@ -7147,7 +7319,7 @@ function renderRelatorios(){
 
   const mainTitle = document.createElement('div');
   mainTitle.className = 'rel-main-title';
-  mainTitle.textContent = 'Para onde foi seu dinheiro?';
+  mainTitle.textContent = ent ? 'De onde veio seu dinheiro?' : 'Para onde foi seu dinheiro?';
   content.appendChild(mainTitle);
 
   const totalValue = document.createElement('div');
@@ -7157,7 +7329,8 @@ function renderRelatorios(){
 
   const totalSub = document.createElement('div');
   totalSub.className = 'rel-total-sub';
-  totalSub.textContent = relTodoPeriodo ? 'gastos em todo o período' : `gastos em ${MESES_TX[relMonth].toLowerCase()}`;
+  const palavra = ent ? 'entradas' : 'gastos';
+  totalSub.textContent = relTodoPeriodo ? `${palavra} em todo o período` : `${palavra} em ${MESES_TX[relMonth].toLowerCase()}`;
   content.appendChild(totalSub);
 
   const bar = document.createElement('div');
@@ -7247,7 +7420,7 @@ function abrirCategoriaModal(cat, r, periodoCustom){
 
   document.getElementById('rel-cat-modal-title').textContent = cat.categoria;
   document.getElementById('rel-cat-modal-value').textContent = formatBRL(cat.valor);
-  document.getElementById('rel-cat-modal-sub').textContent = `${pctTexto} dos gastos do período`;
+  document.getElementById('rel-cat-modal-sub').textContent = `${pctTexto} ${r.tipo === 'entrada' ? 'das entradas' : 'dos gastos'} do período`;
 
   const othersBox = document.getElementById('rel-cat-modal-others');
   othersBox.innerHTML = '';
@@ -7304,7 +7477,7 @@ function abrirCategoriaModal(cat, r, periodoCustom){
   document.getElementById('rel-cat-modal-viewall').onclick = ()=>{
     document.getElementById('rel-category-modal').classList.remove('show');
     txFiltros.busca = '';
-    txFiltros.tipo = 'saida';
+    txFiltros.tipo = r.tipo || 'saida';
     const todo = !periodoCustom && relTodoPeriodo;
     const inicio = periodoCustom ? periodoCustom.inicio : new Date(relYear, relMonth, 1);
     const fim = periodoCustom ? periodoCustom.fim : new Date(relYear, relMonth+1, 0);
@@ -7335,6 +7508,7 @@ document.getElementById('rel-category-modal').addEventListener('click', e=>{
 
 /* ---------- leva de um card de insight (Início) até a categoria correspondente em Relatórios ---------- */
 function irParaInsightNoRelatorio(ins){
+  relTipo = 'saida'; // (2.3.47) os insights falam de gastos
   relTodoPeriodo = false;
   relMonth = ins.mes;
   relYear = ins.ano;
@@ -7348,6 +7522,15 @@ function irParaInsightNoRelatorio(ins){
       || (c.agrupado && r.outrosMembros.some(m => m.categoria === ins.categoria)));
     if(cat){ destacarSegmento(cat.categoria); abrirCategoriaModal(cat, r); }
   }, 340);
+}
+
+/* ---------- (2.3.47) toque em ENTROU/SAIU no Início: abre as entradas ou as saídas em Relatórios ----------
+   O Início soma todo o período, então o relatório abre em "Todo o período" para bater com o número tocado. */
+function irParaTipoNoRelatorio(tipo){
+  relTipo = tipo === 'entrada' ? 'entrada' : 'saida';
+  relTodoPeriodo = true;
+  renderRelatorios();
+  switchToView('view-relatorios');
 }
 
 /* ---------- seletor de período (mês/ano) dos Relatórios ---------- */
@@ -7878,11 +8061,72 @@ document.getElementById('tx-period-btn').addEventListener('click', ()=>{
 /* =========================================================
    RENDER — dashboard (Início)
    ========================================================= */
+/* (2.3.47) O número grande do Início: só as saídas (padrão), só as entradas ou o
+   saldo (entradas − saídas, como era até a 2.3.46). A escolha fica no aparelho. */
+const SALDO_MODO_KEY = 'seeall_saldo_modo';
+const SALDO_MODOS = {
+  saidas:   { rotulo:'SAÍDAS',   opcao:'Saídas',   sub:'Quanto saiu da sua conta',  nota:'Quanto saiu, com base no que você importou' },
+  entradas: { rotulo:'ENTRADAS', opcao:'Entradas', sub:'Quanto entrou na sua conta', nota:'Quanto entrou, com base no que você importou' },
+  saldo:    { rotulo:'SALDO',    opcao:'Entradas − saídas', sub:'O saldo do que você importou', nota:'Entradas menos saídas, com base no que você importou' }
+};
+let saldoModo = 'saidas';
+try{ const m = localStorage.getItem(SALDO_MODO_KEY); if(Object.prototype.hasOwnProperty.call(SALDO_MODOS, m)) saldoModo = m; }catch(e){}
+
+function escolherSaldoModo(modo){
+  if(!Object.prototype.hasOwnProperty.call(SALDO_MODOS, modo)) return;
+  saldoModo = modo;
+  try{ localStorage.setItem(SALDO_MODO_KEY, modo); }catch(e){}
+  renderDashboard();
+  atualizarItemSaldoModo();
+}
+function atualizarItemSaldoModo(){
+  const sub = document.getElementById('cfg-saldo-modo-sub');
+  if(sub) sub.textContent = SALDO_MODOS[saldoModo].opcao;
+}
+function abrirEscolhaSaldoModo(){
+  const lista = document.getElementById('saldo-modo-lista');
+  lista.innerHTML = '';
+  Object.keys(SALDO_MODOS).forEach(modo=>{
+    const m = SALDO_MODOS[modo];
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'option-picker-row' + (modo === saldoModo ? ' selected' : '');
+    row.setAttribute('role', 'radio');
+    row.setAttribute('aria-checked', modo === saldoModo ? 'true' : 'false');
+    row.dataset.modo = modo;
+    row.innerHTML = `<span class="saldo-modo-txt"><span class="saldo-modo-nome"></span><span class="saldo-modo-sub"></span></span><span class="option-picker-radio"></span>`;
+    row.querySelector('.saldo-modo-nome').textContent = m.opcao;
+    row.querySelector('.saldo-modo-sub').textContent = m.sub;
+    row.addEventListener('click', ()=>{
+      if(typeof seeallVibrar === 'function') seeallVibrar();
+      escolherSaldoModo(modo);
+      document.getElementById('saldo-modo-modal').classList.remove('show');
+    });
+    lista.appendChild(row);
+  });
+  document.getElementById('saldo-modo-modal').classList.add('show');
+  const sel = lista.querySelector('.selected');
+  if(sel) sel.focus({ preventScroll:true });
+}
+document.getElementById('dash-saldo-modo').addEventListener('click', abrirEscolhaSaldoModo);
+document.getElementById('saldo-modo-fechar').addEventListener('click', ()=> document.getElementById('saldo-modo-modal').classList.remove('show'));
+document.getElementById('saldo-modo-modal').addEventListener('click', e=>{ if(e.target.id === 'saldo-modo-modal') e.target.classList.remove('show'); });
+document.getElementById('mov-entrou').addEventListener('click', ()=> irParaTipoNoRelatorio('entrada'));
+document.getElementById('mov-saiu').addEventListener('click', ()=> irParaTipoNoRelatorio('saida'));
+document.getElementById('cfg-saldo-modo').addEventListener('click', ()=>{ if(typeof seeallVibrar === 'function') seeallVibrar(); abrirEscolhaSaldoModo(); });
+atualizarItemSaldoModo();
+
 function renderDashboard(){
   try{ if(detectarTransferenciasEntreContas() + detectarFaturasDuplicadas()) invalidarEscalaIntensidade(); }catch(e){} // (2.3.12/2.3.13)
   persistirEstadoEmBreve(); // (2.2.4) antes: salvava tudo a cada desenho
   const { entrou, saiu, saldo } = calcularResumo(transacoes);
-  document.getElementById('dash-saldo').textContent = formatBRL(saldo);
+  { // (2.3.47) saídas, entradas ou saldo, conforme a escolha
+    const m = SALDO_MODOS[saldoModo];
+    document.getElementById('dash-saldo').textContent = formatBRL(saldoModo === 'entradas' ? entrou : saldoModo === 'saldo' ? saldo : saiu);
+    document.getElementById('dash-saldo-rotulo').textContent = m.rotulo;
+    document.getElementById('dash-saldo-modo').setAttribute('aria-label', `${m.opcao}. Escolher o valor em destaque`);
+    document.getElementById('dash-saldo-nota').textContent = m.nota;
+  }
   document.getElementById('dash-entrou').textContent = formatBRL(entrou);
   document.getElementById('dash-saiu').textContent = formatBRL(saiu);
   const maxV = Math.max(entrou, saiu, 1);
@@ -14359,6 +14603,7 @@ async function atualizarCotaNaTela(buscar){
     if(c) el.textContent = `Plano ${cotaPlano().nome}: ${c.usados} de ${c.arquivos_por_mes} arquivos usados este mês · até ${c.paginas_por_arquivo} páginas por arquivo`;
   }
   renderImportBatchCota();
+  if(typeof atualizarPlanoNosAtalhos === 'function') atualizarPlanoNosAtalhos(); // (2.3.47) Perfil e Configurações
 }
 function renderImportBatchCota(){
   const msg = document.getElementById('import-batch-cota-msg');
@@ -17095,7 +17340,7 @@ const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "htm
    .app) não recebem os toques feitos aqui. Nada entra no
    TAB_ORDER nem altera currentTabIndex.
    ========================================================= */
-const SEEALL_VERSAO = '2.3.46'; // (2.3.7) nova abertura e nova logo
+const SEEALL_VERSAO = '2.3.47'; // (2.3.7) nova abertura e nova logo
 const SEEALL_VIBRACAO_KEY = 'seeall_vibracao';
 const SEEALL_TUTORIAL_KEY = 'seeall_tutorial_v1';
 const SEEALL_ETAPAS_IMPORT_CRITICAS = ['file','processing','review','dupsummary','dupreview','duplicado'];
@@ -19108,12 +19353,142 @@ document.getElementById('tx-modal-cat-btn').addEventListener('click', ()=>{ if(m
 (function(){ const n = categoriasUsuario.length; if(n) document.getElementById('cfg-categorias-sub').textContent = n === 1 ? '1 criada por você' : `${n} criadas por você`; })();
 
 /* =========================================================
+   (2.3.47) PLANOS E ASSINATURA — Gratuito × SeeAll Plus
+   Mostra o plano da conta, o uso do mês (importacao/cota.js) e o que cada plano
+   oferece. O Plus ainda não está à venda (planos.a_venda=false no servidor e sem
+   provedor de pagamento): o botão fica "Em breve" e ninguém é cobrado. Quando
+   houver pagamento (Google Play Billing no Android), a compra entra aqui.
+   Abre por Perfil › Assinatura, Configurações › Assinatura e "Ver planos" na importação.
+   ========================================================= */
+const planosLayer = document.getElementById('planos-layer');
+const PLANOS_ORDEM = ['gratuito', 'plus'];
+const PLANOS_RECURSOS = {
+  gratuito: [
+    `${PLANOS.gratuito.arquivosPorMes} extratos por mês`,
+    `Até ${PLANOS.gratuito.paginasPorArquivo} páginas por arquivo`,
+    'PDF, CSV, OFX e imagem, lidos no aparelho',
+    'Relatórios, calendário e categorias',
+    'Seus dados na sua conta, em todos os aparelhos'
+  ],
+  plus: [
+    `${PLANOS.plus.arquivosPorMes} extratos por mês`,
+    `Até ${PLANOS.plus.paginasPorArquivo} páginas por arquivo`,
+    'Tudo do plano Gratuito',
+    'Ajuda a manter o SeeAll sem anúncios'
+  ]
+};
+
+function planoAtualId(){
+  const id = cotaImportacao && cotaImportacao.plano;
+  return Object.prototype.hasOwnProperty.call(PLANOS, id) ? id : 'gratuito';
+}
+// preço com Intl próprio: formatBRL esconde valores quando "ocultar valores" está ligado
+function planoPreco(p){
+  if(!p.precoCentavos) return 'R$ 0';
+  try{ return (p.precoCentavos / 100).toLocaleString('pt-BR', { style:'currency', currency:'BRL' }); }
+  catch(e){ return 'R$ ' + (p.precoCentavos / 100).toFixed(2).replace('.', ','); }
+}
+function planoUsoTexto(){
+  const c = cotaImportacao;
+  if(!c) return null;
+  return `${c.usados} de ${c.arquivos_por_mes} extratos usados este mês`;
+}
+
+// "Plano Gratuito" e o uso do mês nos atalhos (Perfil, Configurações)
+function atualizarPlanoNosAtalhos(){
+  const plano = PLANOS[planoAtualId()];
+  const uso = planoUsoTexto();
+  document.querySelectorAll('[data-plano-nome]').forEach(el=>{ el.textContent = 'Plano ' + plano.nome.replace(/^SeeAll /, ''); });
+  document.querySelectorAll('[data-plano-uso]').forEach(el=>{
+    if(!el.dataset.padrao) el.dataset.padrao = el.textContent;
+    el.textContent = uso || el.dataset.padrao;
+  });
+}
+
+function renderPlanos(){
+  const atual = planoAtualId();
+  const c = cotaImportacao;
+  document.getElementById('planos-atual-nome').textContent = PLANOS[atual].nome;
+  const usoBox = document.getElementById('planos-uso');
+  const nota = document.getElementById('planos-atual-nota');
+  usoBox.hidden = !c;
+  if(c){
+    const pct = c.arquivos_por_mes > 0 ? Math.min(100, (c.usados / c.arquivos_por_mes) * 100) : 0;
+    document.getElementById('planos-uso-num').textContent = `${c.usados} de ${c.arquivos_por_mes}`;
+    document.getElementById('planos-uso-barra').style.width = pct + '%';
+    nota.textContent = c.restantes > 0
+      ? `Restam ${c.restantes} extrato${c.restantes === 1 ? '' : 's'} este mês, com até ${c.paginas_por_arquivo} páginas cada. A contagem recomeça no dia 1º.`
+      : 'Seu limite deste mês acabou. A contagem recomeça no dia 1º.';
+  }else{
+    nota.textContent = navigator.onLine === false
+      ? 'Sem conexão: o uso do mês aparece quando a internet voltar.'
+      : 'A contagem de extratos recomeça no dia 1º de cada mês.';
+  }
+
+  const lista = document.getElementById('planos-lista');
+  lista.innerHTML = '';
+  PLANOS_ORDEM.forEach(id=>{
+    const p = PLANOS[id];
+    const ehAtual = id === atual;
+    const card = document.createElement('section');
+    card.className = 'plano-card' + (ehAtual ? ' atual' : '') + (id === 'plus' ? ' destaque' : '');
+    card.dataset.plano = id;
+    card.setAttribute('aria-label', p.nome);
+    card.innerHTML = `
+      <div class="plano-topo"><span class="plano-nome"></span>${ehAtual ? '<span class="plano-selo">Seu plano</span>' : ''}</div>
+      <div class="plano-preco"><b></b><span>/mês</span></div>
+      <ul class="plano-recursos"></ul>`;
+    card.querySelector('.plano-nome').textContent = p.nome;
+    card.querySelector('.plano-preco b').textContent = planoPreco(p);
+    const ul = card.querySelector('.plano-recursos');
+    PLANOS_RECURSOS[id].forEach(txt=>{
+      const li = document.createElement('li');
+      li.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span></span>';
+      li.querySelector('span').textContent = txt;
+      ul.appendChild(li);
+    });
+    if(!ehAtual && p.precoCentavos > 0){
+      // sem provedor de pagamento ainda: nada de botão que pareça cobrar
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'plano-btn';
+      btn.id = 'plano-assinar-' + id;
+      btn.disabled = true;
+      btn.textContent = 'Em breve';
+      card.appendChild(btn);
+      const aviso = document.createElement('p');
+      aviso.className = 'plano-nota';
+      aviso.textContent = 'A assinatura ainda não está à venda. Ninguém é cobrado.';
+      card.appendChild(aviso);
+    }
+    lista.appendChild(card);
+  });
+}
+
+function abrirPlanos(){
+  if(typeof seeallVibrar === 'function') seeallVibrar();
+  renderPlanos();
+  abrirCamada(planosLayer, document.getElementById('planos-back'));
+  // busca o uso do mês no servidor; sem conexão (ou sem o SQL da 2.3.46) fica o que já se sabe
+  cotaRpc('minha_cota_importacao').then(()=>{
+    atualizarCotaNaTela();
+    if(!planosLayer.hidden) renderPlanos();
+  });
+}
+document.querySelectorAll('[data-abrir-planos]').forEach(b=> b.addEventListener('click', abrirPlanos));
+document.getElementById('planos-back').addEventListener('click', ()=> fecharCamadaTopo());
+planosLayer.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){ e.preventDefault(); fecharCamadaTopo(); return; }
+  if(e.key === 'Tab') seeallPrenderFoco(planosLayer, e);
+});
+atualizarPlanoNosAtalhos();
+/* =========================================================
    TUTORIAL — 4 passos sobre elementos reais do Início
    ========================================================= */
 const TOUR_PASSOS = [
-  { alvo: ()=> [document.querySelector('#view-inicio .balance-card')], titulo:'Seu saldo',
-    texto:'Entradas, saídas, saldo do período: tudo num só lugar.',
-    textoDemo:'Entradas, saídas, saldo do período: tudo num só lugar. Estes são dados de exemplo: eles somem quando o tour acaba.' },
+  { alvo: ()=> [document.querySelector('#view-inicio .balance-card')], titulo:'Seu resumo',
+    texto:'Entradas e saídas num só lugar. Toque no título para escolher o valor em destaque, ou numa barra para ver o relatório.', // (2.3.47)
+    textoDemo:'Entradas e saídas num só lugar. Toque no título para escolher o valor em destaque, ou numa barra para ver o relatório. Estes são dados de exemplo: eles somem quando o tour acaba.' },
   { alvo: ()=> [document.querySelector('#view-inicio .insight-wrap')], titulo:'Insights',
     texto:'Deslize para ver resumos automáticos dos seus gastos.' },
   { alvo: ()=> [document.querySelector('#view-inicio .section-head'), document.getElementById('dash-tx-list')], titulo:'Últimas transações',
@@ -19464,6 +19839,7 @@ if(!tutorialJaConcluido()){
   const cfgBtn = document.getElementById('cfg-instalar');
   const cfgSub = document.getElementById('cfg-instalar-sub');
   const navBtn = document.getElementById('nav-instalar');
+  const authLinha = document.getElementById('auth-instalar-linha'); // (2.3.47) na tela de entrar, no navegador
   const modal = document.getElementById('instalar-modal');
   const corpo = document.getElementById('instalar-modal-corpo');
   const aviso = document.getElementById('pwa-atualizar');
@@ -19490,6 +19866,7 @@ if(!tutorialJaConcluido()){
     cfgBtn.hidden = jaInstalado;
     // na barra lateral, só quando o navegador oferece a instalação direta (sem chamadas repetidas)
     navBtn.hidden = jaInstalado || !pedidoDeInstalacao;
+    if(authLinha) authLinha.hidden = jaInstalado;
     if(cfgSub){
       cfgSub.textContent = pedidoDeInstalacao ? 'Abra o SeeAll como um app, numa janela própria'
         : ehIOS ? 'Adicione o SeeAll à Tela de Início'
@@ -19545,6 +19922,37 @@ if(!tutorialJaConcluido()){
   }
   cfgBtn.addEventListener('click', instalar);
   navBtn.addEventListener('click', instalar);
+  if(authLinha) document.getElementById('auth-instalar').addEventListener('click', instalar);
+
+  /* (2.3.47) o site (seeall.app.br) leva para app/?instalar=1: a página do site não tem script
+     (CSP sem script) e a instalação só pode ser pedida aqui, no escopo do manifesto. O navegador só
+     deixa abrir a instalação com um toque, então o modal traz o botão "Instalar agora". */
+  function veioDoSiteParaInstalar(){
+    let pedido = false;
+    try{
+      const u = new URL(location.href);
+      pedido = u.searchParams.get('instalar') === '1';
+      if(pedido){ u.searchParams.delete('instalar'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
+    }catch(e){}
+    return pedido;
+  }
+  function oferecerInstalacao(){
+    if(instalado || abertoComoApp()){ avisar('O SeeAll já está instalado neste aparelho.'); return; }
+    // o modal mora dentro de .app; com a tela de entrar aberta (auth-gate) ele precisa subir para o body
+    const gate = document.getElementById('auth-gate');
+    if(gate && !gate.hidden && modal.parentNode !== document.body) document.body.appendChild(modal);
+    if(!pedidoDeInstalacao){ abrirModal(instrucoes()); return; }
+    abrirModal(`<p class="instalar-nota">Instale o SeeAll para abrir direto da tela inicial, numa janela própria, como um app.</p>
+      <button type="button" class="import-cta instalar-agora" id="instalar-agora">Instalar agora</button>`);
+    document.getElementById('instalar-agora').addEventListener('click', instalar);
+  }
+  if(veioDoSiteParaInstalar()){
+    // espera um pouco pelo beforeinstallprompt (o Chrome o dispara logo depois de carregar)
+    let feito = false;
+    const ir = ()=>{ if(feito) return; feito = true; oferecerInstalacao(); };
+    window.addEventListener('beforeinstallprompt', ()=> setTimeout(ir, 0), { once:true });
+    setTimeout(ir, 2500);
+  }
 
   window.addEventListener('beforeinstallprompt', e=>{
     e.preventDefault(); // sem a faixa automática do navegador: a instalação fica no botão
