@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <!-- (2.2.4) bloqueia plugins, troca da base dos links e envio de formulários para fora (defesa extra contra injeção) -->
 <!-- (2.3.35) connect-src: mesmo que algum código estranho rodasse aqui, não teria para onde mandar os dados -->
-<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'self' blob: data: https://ychjxppsjiuvvbafignu.supabase.co wss://ychjxppsjiuvvbafignu.supabase.co https://accounts.google.com/gsi/">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'self' blob: data: https://ychjxppsjiuvvbafignu.supabase.co wss://ychjxppsjiuvvbafignu.supabase.co https://accounts.google.com/gsi/ https://*.mercadopago.com https://*.mercadolibre.com https://*.mlstatic.com">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>SeeAll</title>
 <meta name="theme-color" content="#111111">
@@ -1993,15 +1993,33 @@ document.documentElement.setAttribute('data-auth','gate');})();
   .plano-btn-sec{ background:transparent; color:var(--text-white); border:1px solid rgba(var(--ink-rgb),0.16); }
   .plano-btn-sec:disabled{ background:transparent; }
   .plano-btn + .plano-btn{ margin-top:8px; }
-  .plano-mp-form{ margin-top:16px; }
   .plano-mp-rotulo{ display:block; font-size:12.5px; font-weight:600; color:var(--text-dim); margin-bottom:6px; }
   .plano-mp-campo{
     display:block; width:100%; box-sizing:border-box; border-radius:12px; padding:12px 13px; font:inherit; font-size:15px;
     background:var(--bg-track); color:var(--text-white); border:1px solid rgba(var(--ink-rgb),0.12);
   }
-  .plano-mp-dica{ text-align:left; }
   .plano-mp-erro{ color:var(--auth-erro, #e5484d); }
   .plano-mp-info{ margin-top:12px; }
+  /* (2.3.50) painel de pagamento: Pix ou cartão dentro do app */
+  .plano-mp-painel{ margin-top:12px; }
+  .plano-mp-painel[hidden]{ display:none; }
+  .plano-mp-formas{ display:grid; gap:8px; margin-top:14px; }
+  .plano-mp-forma{
+    display:block; width:100%; text-align:left; font:inherit; color:var(--text-white); cursor:pointer;
+    background:var(--bg-track); border:1px solid rgba(var(--ink-rgb),0.12); border-radius:12px; padding:12px 14px;
+  }
+  .plano-mp-forma b{ display:block; font-size:14px; }
+  .plano-mp-forma span{ display:block; font-size:12px; color:var(--text-dim); margin-top:3px; line-height:1.4; }
+  .plano-mp-forma[aria-checked="true"]{ border-color:var(--orange); box-shadow:0 0 0 1px var(--orange) inset; }
+  .plano-mp-area{ margin-top:14px; }
+  .plano-mp-area:empty{ display:none; }
+  .plano-mp-pix{ display:grid; gap:8px; justify-items:center; }
+  .plano-mp-qr{ width:200px; height:200px; background:#fff; border-radius:12px; padding:8px; box-sizing:content-box; }
+  .plano-mp-qr[hidden]{ display:none; }
+  .plano-mp-pix .plano-mp-rotulo, .plano-mp-pix .plano-mp-campo{ justify-self:stretch; }
+  .plano-mp-copia{ font-size:12px; resize:none; word-break:break-all; }
+  .plano-mp-pix .plano-btn{ margin-top:4px; }
+  .plano-mp-erro[hidden]{ display:none; }
   .planos-duvidas{ padding:4px 0; }
   .planos-duvida{ padding:12px 16px; font-size:12.5px; line-height:1.45; color:var(--text-dim); }
   .planos-duvida + .planos-duvida{ border-top:1px solid rgba(var(--ink-rgb),0.07); }
@@ -17382,7 +17400,7 @@ function renderCfgRecorrentes(){
    Mesmos textos das páginas públicas (legal_textos.py). Abrem por cima de
    tudo — inclusive da tela de criar conta — e o voltar do Android fecha.
    ========================================================= */
-const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "html": "<p class=\"legal-vigencia\">Em vigor desde 23 de outubro de 2026.</p>\n<p>Esta política explica quais dados o SeeAll usa, por que usa e como você controla tudo isso. Ela segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>\n<h3>1. Quem é o responsável</h3>\n<p>O responsável pelos seus dados (o controlador, nos termos da LGPD) é <strong>Gabriel</strong>. Para qualquer assunto de privacidade, inclusive para exercer os seus direitos, escreva para <strong>support@seeall.app.br</strong>.</p>\n<h3>2. Dados que o SeeAll usa</h3>\n<ul><li><strong>Conta:</strong> nome, e-mail e senha. A senha é guardada pelo serviço de autenticação de forma criptografada; nem o SeeAll consegue vê-la. Se você entrar com o Google, recebemos do Google o seu nome e o seu e-mail.</li><li><strong>Seus dados financeiros:</strong> as transações que você importa ou registra (data, valor, descrição, categoria, banco e forma de pagamento), as informações de cada importação (nome e formato do arquivo, data) e as categorias que você cria.</li><li><strong>Extratos (PDF, CSV, OFX e imagens):</strong> o arquivo é lido no seu celular. O conteúdo completo do extrato fica só no aparelho; para a sua conta vão apenas as transações encontradas e as informações da importação. Se a leitura falhar e você tocar em “Enviar este arquivo” e aceitar, o arquivo inteiro é enviado para uma área privada, usado só para o SeeAll aprender a ler aquele modelo de extrato e apagado em até 90 dias.</li><li><strong>Notificações dos bancos (só no Android, e só se você ligar):</strong> o SeeAll lê as notificações dos apps de banco compatíveis para registrar compras, Pix e transferências. As notificações de outros apps são ignoradas na hora. O texto da notificação fica só no aparelho; para a sua conta vão apenas os dados da transação.</li><li><strong>Assinatura do SeeAll Plus (só se você assinar):</strong> o e-mail da sua conta Mercado Pago que você informar, a situação da assinatura e as datas e valores das cobranças. Os dados do cartão são digitados no Mercado Pago e ficam só com ele; o SeeAll não os recebe.</li><li><strong>Perfil e preferências:</strong> foto, tema e cores ficam só no aparelho.</li><li><strong>Estatísticas anônimas de uso:</strong> o app conta alguns acontecimentos sem identificar você, a sua conta ou o aparelho: a instalação, o resultado da leitura de cada extrato (formato, modelo do banco, faixa de quantidade de transações e se o saldo conferiu), se a leitura de notificações foi ligada e se o app voltou a ser usado depois de 7 e de 30 dias. Não vão valores, descrições, nomes nem dados da conta. Você pode desligar em Configurações › Estatísticas anônimas de uso.</li><li><strong>Dados técnicos:</strong> ao usar a conta e ao carregar as fontes do app, os serviços envolvidos recebem dados técnicos da conexão, como endereço IP e tipo de aparelho.</li></ul>\n<p>O SeeAll <strong>não</strong> usa a sua localização, os seus contatos ou o seu microfone, <strong>não</strong> mostra anúncios e <strong>não</strong> usa ferramentas de rastreamento de outras empresas.</p>\n<h3>3. Para que usamos (e com que base legal)</h3>\n<ul><li>Criar e manter a sua conta, guardar os seus dados e sincronizá-los entre os seus aparelhos: para prestar o serviço que você contrata ao criar a conta (execução de contrato, art. 7º, V, da LGPD).</li><li>Cobrar e manter a assinatura do SeeAll Plus, se você assinar: execução de contrato (art. 7º, V) e, para guardar o registro das cobranças, cumprimento de obrigação legal (art. 7º, II).</li><li>Ler as notificações dos bancos: com o seu consentimento, que você dá ao ligar a leitura e pode retirar quando quiser, desligando-a (art. 7º, I).</li><li>Contar as estatísticas anônimas de uso, para saber quais extratos o app lê bem e onde melhorar: legítimo interesse (art. 7º, IX), com a opção de desligar.</li><li>Manter o serviço seguro e evitar fraudes e abusos, inclusive com registros técnicos de acesso: legítimo interesse (art. 7º, IX) e cumprimento de obrigação legal, quando houver (art. 7º, II).</li></ul>\n<p>Não vendemos os seus dados e não os usamos para publicidade.</p>\n<h3>4. Com quem os dados são compartilhados</h3>\n<p>Só com os serviços que o SeeAll usa para funcionar, que tratam os dados em nosso nome (operadores):</p>\n<ul><li><strong>Supabase:</strong> autenticação e banco de dados da sua conta.</li><li><strong>Google:</strong> somente se você escolher entrar com o Google.</li><li><strong>Mercado Pago:</strong> somente se você assinar o SeeAll Plus. Processa o pagamento e a cobrança mensal, com a sua própria política de privacidade.</li><li><strong>Google Fonts:</strong> entrega as fontes do app. Recebe apenas dados técnicos da conexão, nunca os seus dados financeiros. As bibliotecas de leitura de PDF e de imagem vêm dentro do próprio app.</li></ul>\n<p>Também podemos compartilhar dados com autoridades quando houver obrigação legal ou ordem judicial.</p>\n<h3>5. Transferência para fora do Brasil</h3>\n<p>Alguns desses serviços guardam ou processam dados fora do Brasil. Essa transferência é necessária para prestar o serviço que você contratou (art. 33, IX, da LGPD), e os fornecedores adotam medidas de segurança compatíveis com a lei.</p>\n<h3>6. Por quanto tempo guardamos</h3>\n<ul><li>Os dados da conta e os seus dados financeiros ficam guardados enquanto a sua conta existir.</li><li>Quando você exclui a conta, ela e os dados dela são apagados da nuvem na hora, inclusive os extratos que você tiver enviado para o suporte. Cópias de segurança do provedor podem levar alguns dias para serem substituídas automaticamente.</li><li>Extratos enviados para o suporte são apagados automaticamente em até 90 dias.</li><li>O registro das cobranças da assinatura (datas, valores e situação, sem dados do cartão) é mantido pelo prazo exigido em lei, mesmo depois de excluída a conta, sem ficar ligado a ela.</li><li>Registros técnicos de acesso podem ser mantidos pelo prazo exigido em lei.</li><li>As estatísticas anônimas não ficam ligadas a você nem à sua conta e são apagadas em até 12 meses.</li><li>O que fica só no aparelho sai quando você usa “Apagar todos os dados”, exclui a conta pelo app ou desinstala o SeeAll.</li></ul>\n<h3>7. Seus direitos</h3>\n<p>A qualquer momento, você pode: confirmar se tratamos os seus dados e acessá-los; corrigi-los; pedir a portabilidade; pedir a eliminação; saber com quem os compartilhamos; retirar o consentimento; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>\n<p>Boa parte disso já está no app: exporte as suas transações em Configurações › Exportar transações (CSV); edite ou apague transações; desligue a leitura de notificações; use Configurações › Apagar todos os dados ou Configurações › Excluir conta. Para o restante, escreva para <strong>support@seeall.app.br</strong>. Respondemos em até 15 dias.</p>\n<h3>8. Segurança</h3>\n<p>A comunicação com a nuvem é criptografada (HTTPS), e cada conta só enxerga os próprios dados, por regras do próprio banco de dados. Mesmo assim, nenhum sistema é totalmente imune a falhas. Se acontecer um incidente que possa trazer risco a você, avisaremos você e a ANPD, como manda a lei.</p>\n<h3>9. Crianças e adolescentes</h3>\n<p>O SeeAll não é destinado a menores de 18 anos.</p>\n<h3>10. Mudanças nesta política</h3>\n<p>Quando esta política mudar, avisaremos no app. A data no topo indica a versão em vigor.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}, "termos": {"titulo": "Termos de uso", "html": "<p class=\"legal-vigencia\">Em vigor desde 23 de outubro de 2026.</p>\n<p>Estes termos explicam as regras de uso do SeeAll. Ao criar uma conta, você concorda com eles e com a Política de privacidade.</p>\n<h3>1. O que é o SeeAll</h3>\n<p>O SeeAll é um aplicativo para organizar e entender as suas finanças pessoais a partir de extratos, registros e notificações que você mesmo traz para ele.</p>\n<p>O SeeAll <strong>não</strong> é banco nem instituição financeira: não movimenta dinheiro, não faz pagamentos, não acessa as suas contas bancárias e não oferece consultoria financeira, de investimentos ou contábil. As informações do app servem para o seu acompanhamento pessoal e não substituem os extratos oficiais do seu banco.</p>\n<h3>2. Sua conta</h3>\n<ul><li>Você precisa ter 18 anos ou mais para usar o SeeAll.</li><li>Use informações verdadeiras e mantenha a sua senha em segredo. Você é responsável pelo que acontece na sua conta.</li><li>Se perceber uso indevido da sua conta, troque a senha e avise-nos em <strong>support@seeall.app.br</strong>.</li></ul>\n<h3>3. Seus dados</h3>\n<p>Os dados que você coloca no SeeAll continuam sendo seus. Você nos autoriza a tratá-los apenas para prestar o serviço, como descrito na Política de privacidade. Você pode exportá-los, apagá-los ou excluir a conta quando quiser.</p>\n<h3>4. Leitura automática</h3>\n<p>O SeeAll lê extratos e notificações de forma automática e pode errar: um valor, uma data ou uma categoria podem não sair como deveriam. Confira as informações importantes no seu banco. O SeeAll não se responsabiliza por decisões tomadas apenas com base nos dados do app.</p>\n<h3>5. Uso permitido</h3>\n<p>Não é permitido usar o SeeAll para fins ilegais, tentar acessar dados de outras pessoas, contornar as medidas de segurança, sobrecarregar o serviço de propósito ou usá-lo de forma que prejudique outras pessoas. Contas que fizerem isso podem ser suspensas ou encerradas.</p>\n<h3>6. Marcas de terceiros</h3>\n<p>Os nomes de bancos, aplicativos e serviços citados no SeeAll pertencem aos seus titulares e aparecem apenas para indicar com quais extratos e notificações o app funciona. O SeeAll não tem vínculo, parceria ou patrocínio de nenhum deles.</p>\n<h3>7. Planos e assinatura do SeeAll Plus</h3>\n<p>O SeeAll tem o plano <strong>Gratuito</strong>, com limite mensal de extratos, e o <strong>SeeAll Plus</strong>, opcional e pago, com limites maiores e recursos extras. Os limites e o preço de cada plano aparecem na tela Planos do app antes da contratação.</p>\n<ul><li><strong>Cobrança:</strong> o SeeAll Plus é uma assinatura mensal, cobrada no cartão pelo Mercado Pago, que se renova automaticamente a cada mês, no mesmo dia da contratação, até você cancelar.</li><li><strong>Cancelamento:</strong> você pode cancelar quando quiser, em Planos › Cancelar assinatura, sem multa. A renovação para na hora e você continua com o Plus até o fim do mês já pago. Excluir a conta também cancela a assinatura.</li><li><strong>Direito de arrependimento:</strong> em até 7 dias da primeira contratação, você pode desistir e receber de volta o valor pago (art. 49 do Código de Defesa do Consumidor). Basta pedir em <strong>support@seeall.app.br</strong>. Com o reembolso, o Plus é encerrado.</li><li><strong>Falta de pagamento:</strong> se uma cobrança não for aprovada, o Mercado Pago tenta de novo por alguns dias. Sem pagamento, a conta volta ao plano Gratuito; nenhum dado é apagado.</li><li><strong>Mudança de preço:</strong> avisaremos no app e por e-mail com pelo menos 30 dias de antecedência. Você pode cancelar antes de o novo preço valer.</li></ul>\n<p>O pagamento é processado pelo Mercado Pago, sob as condições dele. O SeeAll não recebe nem guarda os dados do seu cartão.</p>\n<h3>8. Disponibilidade e mudanças</h3>\n<p>Trabalhamos para manter o SeeAll funcionando, mas ele pode ficar indisponível por manutenção, falhas de internet ou de fornecedores. A sincronização entre aparelhos depende de conexão. Podemos melhorar, mudar ou encerrar funções; se houver mudança importante, avisaremos no app.</p>\n<h3>9. Responsabilidade</h3>\n<p>Na medida permitida pela lei, inclusive pelo Código de Defesa do Consumidor, o SeeAll não responde por perdas causadas por informações incorretas vindas de extratos ou notificações, por uso indevido da sua conta por falta de cuidado com a senha, ou por indisponibilidades fora do nosso controle.</p>\n<h3>10. Encerramento</h3>\n<p>Você pode excluir a sua conta a qualquer momento em Configurações › Excluir conta. Também podemos encerrar contas que violem estes termos, avisando antes quando for possível; se houver assinatura ativa, ela é cancelada e o período já pago e não usado é reembolsado.</p>\n<h3>11. Mudanças nestes termos</h3>\n<p>Se estes termos mudarem, avisaremos no app. Continuar usando o SeeAll depois do aviso significa concordar com a nova versão.</p>\n<h3>12. Lei e foro</h3>\n<p>Estes termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}};
+const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "html": "<p class=\"legal-vigencia\">Em vigor desde 24 de outubro de 2026.</p>\n<p>Esta política explica quais dados o SeeAll usa, por que usa e como você controla tudo isso. Ela segue a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>\n<h3>1. Quem é o responsável</h3>\n<p>O responsável pelos seus dados (o controlador, nos termos da LGPD) é <strong>Gabriel</strong>. Para qualquer assunto de privacidade, inclusive para exercer os seus direitos, escreva para <strong>support@seeall.app.br</strong>.</p>\n<h3>2. Dados que o SeeAll usa</h3>\n<ul><li><strong>Conta:</strong> nome, e-mail e senha. A senha é guardada pelo serviço de autenticação de forma criptografada; nem o SeeAll consegue vê-la. Se você entrar com o Google, recebemos do Google o seu nome e o seu e-mail.</li><li><strong>Seus dados financeiros:</strong> as transações que você importa ou registra (data, valor, descrição, categoria, banco e forma de pagamento), as informações de cada importação (nome e formato do arquivo, data) e as categorias que você cria.</li><li><strong>Extratos (PDF, CSV, OFX e imagens):</strong> o arquivo é lido no seu celular. O conteúdo completo do extrato fica só no aparelho; para a sua conta vão apenas as transações encontradas e as informações da importação. Se a leitura falhar e você tocar em “Enviar este arquivo” e aceitar, o arquivo inteiro é enviado para uma área privada, usado só para o SeeAll aprender a ler aquele modelo de extrato e apagado em até 90 dias.</li><li><strong>Notificações dos bancos (só no Android, e só se você ligar):</strong> o SeeAll lê as notificações dos apps de banco compatíveis para registrar compras, Pix e transferências. As notificações de outros apps são ignoradas na hora. O texto da notificação fica só no aparelho; para a sua conta vão apenas os dados da transação.</li><li><strong>Pagamento do SeeAll Plus (só se você assinar):</strong> o e-mail para o recibo, a forma de pagamento (cartão ou Pix), a situação da assinatura e as datas e valores das cobranças. Os dados do cartão são digitados em campos do Mercado Pago e ficam só com ele; o SeeAll não os recebe.</li><li><strong>Perfil e preferências:</strong> foto, tema e cores ficam só no aparelho.</li><li><strong>Estatísticas anônimas de uso:</strong> o app conta alguns acontecimentos sem identificar você, a sua conta ou o aparelho: a instalação, o resultado da leitura de cada extrato (formato, modelo do banco, faixa de quantidade de transações e se o saldo conferiu), se a leitura de notificações foi ligada e se o app voltou a ser usado depois de 7 e de 30 dias. Não vão valores, descrições, nomes nem dados da conta. Você pode desligar em Configurações › Estatísticas anônimas de uso.</li><li><strong>Dados técnicos:</strong> ao usar a conta e ao carregar as fontes do app, os serviços envolvidos recebem dados técnicos da conexão, como endereço IP e tipo de aparelho.</li></ul>\n<p>O SeeAll <strong>não</strong> usa a sua localização, os seus contatos ou o seu microfone, <strong>não</strong> mostra anúncios e <strong>não</strong> usa ferramentas de rastreamento de outras empresas.</p>\n<h3>3. Para que usamos (e com que base legal)</h3>\n<ul><li>Criar e manter a sua conta, guardar os seus dados e sincronizá-los entre os seus aparelhos: para prestar o serviço que você contrata ao criar a conta (execução de contrato, art. 7º, V, da LGPD).</li><li>Cobrar e manter a assinatura do SeeAll Plus, se você assinar: execução de contrato (art. 7º, V) e, para guardar o registro das cobranças, cumprimento de obrigação legal (art. 7º, II).</li><li>Ler as notificações dos bancos: com o seu consentimento, que você dá ao ligar a leitura e pode retirar quando quiser, desligando-a (art. 7º, I).</li><li>Contar as estatísticas anônimas de uso, para saber quais extratos o app lê bem e onde melhorar: legítimo interesse (art. 7º, IX), com a opção de desligar.</li><li>Manter o serviço seguro e evitar fraudes e abusos, inclusive com registros técnicos de acesso: legítimo interesse (art. 7º, IX) e cumprimento de obrigação legal, quando houver (art. 7º, II).</li></ul>\n<p>Não vendemos os seus dados e não os usamos para publicidade.</p>\n<h3>4. Com quem os dados são compartilhados</h3>\n<p>Só com os serviços que o SeeAll usa para funcionar, que tratam os dados em nosso nome (operadores):</p>\n<ul><li><strong>Supabase:</strong> autenticação e banco de dados da sua conta.</li><li><strong>Google:</strong> somente se você escolher entrar com o Google.</li><li><strong>Mercado Pago:</strong> somente se você assinar o SeeAll Plus. Processa o pagamento (cartão ou Pix) e a cobrança mensal do cartão, com a sua própria política de privacidade. Ao abrir o pagamento com cartão, o app carrega o formulário seguro do Mercado Pago, que recebe dados técnicos da conexão para prevenir fraude.</li><li><strong>Google Fonts:</strong> entrega as fontes do app. Recebe apenas dados técnicos da conexão, nunca os seus dados financeiros. As bibliotecas de leitura de PDF e de imagem vêm dentro do próprio app.</li></ul>\n<p>Também podemos compartilhar dados com autoridades quando houver obrigação legal ou ordem judicial.</p>\n<h3>5. Transferência para fora do Brasil</h3>\n<p>Alguns desses serviços guardam ou processam dados fora do Brasil. Essa transferência é necessária para prestar o serviço que você contratou (art. 33, IX, da LGPD), e os fornecedores adotam medidas de segurança compatíveis com a lei.</p>\n<h3>6. Por quanto tempo guardamos</h3>\n<ul><li>Os dados da conta e os seus dados financeiros ficam guardados enquanto a sua conta existir.</li><li>Quando você exclui a conta, ela e os dados dela são apagados da nuvem na hora, inclusive os extratos que você tiver enviado para o suporte. Cópias de segurança do provedor podem levar alguns dias para serem substituídas automaticamente.</li><li>Extratos enviados para o suporte são apagados automaticamente em até 90 dias.</li><li>O registro das cobranças da assinatura (datas, valores e situação, sem dados do cartão) é mantido pelo prazo exigido em lei, mesmo depois de excluída a conta, sem ficar ligado a ela.</li><li>Registros técnicos de acesso podem ser mantidos pelo prazo exigido em lei.</li><li>As estatísticas anônimas não ficam ligadas a você nem à sua conta e são apagadas em até 12 meses.</li><li>O que fica só no aparelho sai quando você usa “Apagar todos os dados”, exclui a conta pelo app ou desinstala o SeeAll.</li></ul>\n<h3>7. Seus direitos</h3>\n<p>A qualquer momento, você pode: confirmar se tratamos os seus dados e acessá-los; corrigi-los; pedir a portabilidade; pedir a eliminação; saber com quem os compartilhamos; retirar o consentimento; e reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>\n<p>Boa parte disso já está no app: exporte as suas transações em Configurações › Exportar transações (CSV); edite ou apague transações; desligue a leitura de notificações; use Configurações › Apagar todos os dados ou Configurações › Excluir conta. Para o restante, escreva para <strong>support@seeall.app.br</strong>. Respondemos em até 15 dias.</p>\n<h3>8. Segurança</h3>\n<p>A comunicação com a nuvem é criptografada (HTTPS), e cada conta só enxerga os próprios dados, por regras do próprio banco de dados. Mesmo assim, nenhum sistema é totalmente imune a falhas. Se acontecer um incidente que possa trazer risco a você, avisaremos você e a ANPD, como manda a lei.</p>\n<h3>9. Crianças e adolescentes</h3>\n<p>O SeeAll não é destinado a menores de 18 anos.</p>\n<h3>10. Mudanças nesta política</h3>\n<p>Quando esta política mudar, avisaremos no app. A data no topo indica a versão em vigor.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}, "termos": {"titulo": "Termos de uso", "html": "<p class=\"legal-vigencia\">Em vigor desde 24 de outubro de 2026.</p>\n<p>Estes termos explicam as regras de uso do SeeAll. Ao criar uma conta, você concorda com eles e com a Política de privacidade.</p>\n<h3>1. O que é o SeeAll</h3>\n<p>O SeeAll é um aplicativo para organizar e entender as suas finanças pessoais a partir de extratos, registros e notificações que você mesmo traz para ele.</p>\n<p>O SeeAll <strong>não</strong> é banco nem instituição financeira: não movimenta dinheiro, não faz pagamentos, não acessa as suas contas bancárias e não oferece consultoria financeira, de investimentos ou contábil. As informações do app servem para o seu acompanhamento pessoal e não substituem os extratos oficiais do seu banco.</p>\n<h3>2. Sua conta</h3>\n<ul><li>Você precisa ter 18 anos ou mais para usar o SeeAll.</li><li>Use informações verdadeiras e mantenha a sua senha em segredo. Você é responsável pelo que acontece na sua conta.</li><li>Se perceber uso indevido da sua conta, troque a senha e avise-nos em <strong>support@seeall.app.br</strong>.</li></ul>\n<h3>3. Seus dados</h3>\n<p>Os dados que você coloca no SeeAll continuam sendo seus. Você nos autoriza a tratá-los apenas para prestar o serviço, como descrito na Política de privacidade. Você pode exportá-los, apagá-los ou excluir a conta quando quiser.</p>\n<h3>4. Leitura automática</h3>\n<p>O SeeAll lê extratos e notificações de forma automática e pode errar: um valor, uma data ou uma categoria podem não sair como deveriam. Confira as informações importantes no seu banco. O SeeAll não se responsabiliza por decisões tomadas apenas com base nos dados do app.</p>\n<h3>5. Uso permitido</h3>\n<p>Não é permitido usar o SeeAll para fins ilegais, tentar acessar dados de outras pessoas, contornar as medidas de segurança, sobrecarregar o serviço de propósito ou usá-lo de forma que prejudique outras pessoas. Contas que fizerem isso podem ser suspensas ou encerradas.</p>\n<h3>6. Marcas de terceiros</h3>\n<p>Os nomes de bancos, aplicativos e serviços citados no SeeAll pertencem aos seus titulares e aparecem apenas para indicar com quais extratos e notificações o app funciona. O SeeAll não tem vínculo, parceria ou patrocínio de nenhum deles.</p>\n<h3>7. Planos e assinatura do SeeAll Plus</h3>\n<p>O SeeAll tem o plano <strong>Gratuito</strong>, com limite mensal de extratos, e o <strong>SeeAll Plus</strong>, opcional e pago, com limites maiores e recursos extras. Os limites e o preço de cada plano aparecem na tela Planos do app antes da contratação.</p>\n<ul><li><strong>No cartão de crédito:</strong> o SeeAll Plus é uma assinatura mensal, cobrada pelo Mercado Pago, que se renova automaticamente a cada mês, no mesmo dia da contratação, até você cancelar.</li><li><strong>No Pix:</strong> cada pagamento vale 30 dias de Plus, somados ao que ainda restar. Não há renovação automática: para continuar, você paga um novo Pix.</li><li><strong>Cancelamento:</strong> a assinatura no cartão pode ser cancelada quando você quiser, em Planos › Cancelar assinatura, sem multa. A renovação para na hora e você continua com o Plus até o fim do mês já pago. Excluir a conta também cancela a assinatura.</li><li><strong>Direito de arrependimento:</strong> em até 7 dias da contratação (no cartão, da primeira cobrança; no Pix, de cada pagamento), você pode desistir e receber de volta o valor pago (art. 49 do Código de Defesa do Consumidor). Basta pedir em <strong>support@seeall.app.br</strong>. Com o reembolso, o Plus daquele período é encerrado.</li><li><strong>Falta de pagamento:</strong> se uma cobrança no cartão não for aprovada, o Mercado Pago tenta de novo por alguns dias. Sem pagamento (ou terminados os 30 dias do Pix), a conta volta ao plano Gratuito; nenhum dado é apagado.</li><li><strong>Mudança de preço:</strong> avisaremos no app e por e-mail com pelo menos 30 dias de antecedência. Você pode cancelar antes de o novo preço valer.</li></ul>\n<p>O pagamento é feito dentro do app e processado pelo Mercado Pago, sob as condições dele; não é preciso ter conta no Mercado Pago. Os dados do cartão são digitados em campos do próprio Mercado Pago: o SeeAll não os recebe nem guarda.</p>\n<h3>8. Disponibilidade e mudanças</h3>\n<p>Trabalhamos para manter o SeeAll funcionando, mas ele pode ficar indisponível por manutenção, falhas de internet ou de fornecedores. A sincronização entre aparelhos depende de conexão. Podemos melhorar, mudar ou encerrar funções; se houver mudança importante, avisaremos no app.</p>\n<h3>9. Responsabilidade</h3>\n<p>Na medida permitida pela lei, inclusive pelo Código de Defesa do Consumidor, o SeeAll não responde por perdas causadas por informações incorretas vindas de extratos ou notificações, por uso indevido da sua conta por falta de cuidado com a senha, ou por indisponibilidades fora do nosso controle.</p>\n<h3>10. Encerramento</h3>\n<p>Você pode excluir a sua conta a qualquer momento em Configurações › Excluir conta. Também podemos encerrar contas que violem estes termos, avisando antes quando for possível; se houver assinatura ativa, ela é cancelada e o período já pago e não usado é reembolsado.</p>\n<h3>11. Mudanças nestes termos</h3>\n<p>Se estes termos mudarem, avisaremos no app. Continuar usando o SeeAll depois do aviso significa concordar com a nova versão.</p>\n<h3>12. Lei e foro</h3>\n<p>Estes termos seguem as leis do Brasil. Fica eleito o foro do domicílio do usuário.</p>\n<h3>Contato</h3><p><strong>Gabriel</strong> · support@seeall.app.br</p>"}};
 (function iniciarLegal(){
   const modal = document.getElementById('legal-modal');
   const corpo = document.getElementById('legal-corpo');
@@ -17430,7 +17448,7 @@ const SEEALL_LEGAL = {"privacidade": {"titulo": "Política de privacidade", "htm
    .app) não recebem os toques feitos aqui. Nada entra no
    TAB_ORDER nem altera currentTabIndex.
    ========================================================= */
-const SEEALL_VERSAO = '2.3.49'; // (2.3.7) nova abertura e nova logo
+const SEEALL_VERSAO = '2.3.50'; // (2.3.7) nova abertura e nova logo
 const SEEALL_VIBRACAO_KEY = 'seeall_vibracao';
 const SEEALL_TUTORIAL_KEY = 'seeall_tutorial_v1';
 const SEEALL_ETAPAS_IMPORT_CRITICAS = ['file','processing','review','dupsummary','dupreview','duplicado'];
@@ -19476,7 +19494,7 @@ document.getElementById('tx-modal-cat-btn').addEventListener('click', ()=>{ if(m
    provedor de pagamento): o botão fica "Em breve" e ninguém é cobrado. Quando
    houver pagamento (Google Play Billing no Android), a compra entra aqui.
    Abre por Perfil › Assinatura, Configurações › Assinatura e "Ver planos" na importação.
-   (2.3.49) Assinatura mensal pelo Mercado Pago, só no site/PWA (no app Android o Google
+   (2.3.49) Plus pelo Mercado Pago, só no site/PWA (no app Android o Google
    Play exige o Billing dele): Edge Function mp-pagamento, publicada no endereço mp-pagamentos.
    O botão só aparece com planos.a_venda=true no servidor. Quem libera o Plus é o servidor.
    ========================================================= */
@@ -19570,8 +19588,8 @@ function renderPlanos(){
       li.querySelector('span').textContent = txt;
       ul.appendChild(li);
     });
-    if(id === 'plus' && mpPodeAssinarAqui() && (!ehAtual || mpEstado.minhas.length)){
-      // (2.3.49) assinatura pelo Mercado Pago: assinar, ver a validade, cancelar
+    if(id === 'plus' && mpPodeAssinarAqui() && (!ehAtual || mpEstado.origem === 'mercado_pago')){
+      // (2.3.49) assinatura pelo Mercado Pago; (2.3.50) Pix ou cartão dentro do app
       mpMontarCartao(card, ehAtual);
     }else if(!ehAtual && p.precoCentavos > 0){
       // sem provedor de pagamento ainda: nada de botão que pareça cobrar
@@ -19601,6 +19619,7 @@ function abrirPlanos(){
     if(!planosLayer.hidden) renderPlanos();
   });
   mpCarregar().then(()=>{ if(!planosLayer.hidden) renderPlanos(); }); // (2.3.49)
+  if(mpPainel.pix) mpConferirPix(mpPainel.pix.pagamento, Date.now()); // (2.3.50) voltou com um Pix na tela
 }
 document.querySelectorAll('[data-abrir-planos]').forEach(b=> b.addEventListener('click', abrirPlanos));
 document.getElementById('planos-back').addEventListener('click', ()=> fecharCamadaTopo());
@@ -19612,14 +19631,19 @@ atualizarPlanoNosAtalhos();
 
 
 /* =========================================================
-   (2.3.49) ASSINATURA DO PLUS PELO MERCADO PAGO (só no site/PWA)
-   assinar: o servidor cria a assinatura da conta e devolve o link do Mercado Pago.
-   volta:   o Mercado Pago volta para app/?preapproval_id=...; o app pede "conferir"
-            (o webhook também avisa o servidor; os dois caminhos dão no mesmo).
-   cancelar: a renovação para; o Plus segue até o fim do mês já pago.
+   (2.3.49) PLUS PELO MERCADO PAGO (só no site/PWA)
+   (2.3.50) Pago DENTRO do app, sem conta no Mercado Pago:
+   - Cartão: formulário seguro do Mercado Pago (Card Payment Brick, carregado só quando a pessoa
+     escolhe cartão). O número do cartão fica nos campos do Mercado Pago; o app só recebe um token
+     e o servidor cria a assinatura mensal (renova sozinha; cancelar em dois toques).
+   - Pix: o servidor cria o Pix de 30 dias; o app mostra o QR code e o "copia e cola" e confere o
+     pagamento a cada 5 s enquanto o painel estiver aberto (o webhook também avisa o servidor).
+   O painel de pagamento fica fora de #planos-lista: renderPlanos não o recria (os campos do cartão
+   são iframes e recarregariam).
    ========================================================= */
-const MP_VOLTA_KEY = 'seeall_mp_volta'; // id da assinatura que voltou do Mercado Pago, até conferir
-const mpEstado = { aVenda:false, minhas:[], validoAte:null, origem:null, ocupado:false, erro:'', formAberto:false, confirmarCancelar:false };
+const MP_SDK_URL = 'https://sdk.mercadopago.com/js/v2';
+const mpEstado = { aVenda:false, minhas:[], validoAte:null, origem:null, ocupado:false, erro:'', confirmarCancelar:false };
+const mpPainel = { el:null, forma:null, brick:null, pix:null, timer:null, config:null };
 
 function mpNoAppNativo(){
   try{ const C = window.Capacitor; return !!(C && typeof C.isNativePlatform === 'function' && C.isNativePlatform()); }catch(e){ return false; }
@@ -19665,29 +19689,27 @@ async function mpChamar(corpo){
 }
 function mpMensagem(erro){
   return ({
-    ja_assinante: 'Você já tem uma assinatura ativa.',
+    ja_assinante: 'Você já tem uma assinatura ativa no cartão.',
     fora_de_venda: 'A assinatura não está à venda no momento.',
     muitas_tentativas: 'Muitas tentativas seguidas. Espere um pouco e tente de novo.',
-    email: 'Confira o e-mail da sua conta Mercado Pago.',
+    cartao_recusado: 'O cartão foi recusado. Confira os dados ou use outro cartão.',
     sem_conexao: 'Sem conexão. Tente de novo quando a internet voltar.',
-    sem_credenciais: 'A assinatura ainda está sendo configurada. Tente mais tarde.',
-    mercado_pago: 'O Mercado Pago não respondeu. Confira o e-mail e tente de novo.'
+    sem_credenciais: 'O pagamento ainda está sendo configurado. Tente mais tarde.',
+    sdk: 'Não deu para abrir o formulário do cartão. Confira a conexão e tente de novo.',
+    mercado_pago: 'O Mercado Pago não respondeu. Tente de novo em instantes.'
   })[erro] || 'Não deu certo agora. Tente de novo em instantes.';
 }
 
 function mpMontarCartao(card, ehAtual){
   const ativa = mpEstado.minhas.find(a => a.status === 'authorized');
-  const pausada = mpEstado.minhas.find(a => a.status === 'paused');
   const info = document.createElement('p');
   info.className = 'plano-nota plano-mp-info';
   if(ativa){
     info.textContent = ativa.proxima_cobranca
-      ? `Assinatura ativa. Renova em ${mpData(ativa.proxima_cobranca)} pelo Mercado Pago.`
-      : 'Assinatura ativa, com renovação mensal pelo Mercado Pago.';
-  }else if(ehAtual && mpEstado.origem === 'mercado_pago' && mpEstado.validoAte){
-    info.textContent = `${pausada ? 'Assinatura pausada' : 'Assinatura cancelada'}. O Plus vale até ${mpData(mpEstado.validoAte)}.`;
-  }else{
-    info.textContent = '';
+      ? `Assinatura no cartão ativa. Renova em ${mpData(ativa.proxima_cobranca)}.`
+      : 'Assinatura no cartão ativa, com renovação mensal.';
+  }else if(ehAtual && mpEstado.validoAte){
+    info.textContent = `O Plus vale até ${mpData(mpEstado.validoAte)}.`;
   }
 
   if(ativa){
@@ -19705,40 +19727,18 @@ function mpMontarCartao(card, ehAtual){
       n.textContent = 'A renovação para e você continua no Plus até o fim do mês já pago.';
       card.appendChild(n);
     }
-  }else if(ehAtual && mpEstado.validoAte && new Date(mpEstado.validoAte) > new Date() && mpEstado.origem !== 'mercado_pago'){
-    // Plus dado de outro jeito (manual): nada a assinar
-  }else if(!mpEstado.formAberto){
+  }else{
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'plano-btn';
     btn.id = 'plano-assinar-plus';
-    btn.textContent = ehAtual ? 'Assinar de novo' : `Assinar por ${planoPreco(PLANOS.plus)}/mês`;
-    btn.addEventListener('click', ()=>{ mpEstado.formAberto = true; mpEstado.erro = ''; renderPlanos(); const e = document.getElementById('plano-mp-email'); if(e) e.focus(); });
+    btn.textContent = ehAtual ? 'Renovar ou assinar' : `Assinar por ${planoPreco(PLANOS.plus)}/mês`;
+    btn.addEventListener('click', mpAbrirPainel);
     card.appendChild(btn);
     const n = document.createElement('p');
     n.className = 'plano-nota';
-    n.textContent = 'Cobrança mensal no cartão pelo Mercado Pago. Cancele quando quiser, aqui mesmo.';
+    n.textContent = 'Pix ou cartão de crédito, aqui mesmo. Não precisa ter conta no Mercado Pago.';
     card.appendChild(n);
-  }else{
-    const form = document.createElement('form');
-    form.className = 'plano-mp-form';
-    form.noValidate = true;
-    form.innerHTML = `
-      <label class="plano-mp-rotulo" for="plano-mp-email">E-mail da sua conta Mercado Pago</label>
-      <input class="plano-mp-campo" id="plano-mp-email" type="email" autocomplete="email" inputmode="email" required>
-      <p class="plano-nota plano-mp-dica">Use o e-mail com que você entra no Mercado Pago: ele precisa ser o mesmo para a assinatura dar certo.</p>
-      <button class="plano-btn" id="plano-mp-continuar" type="submit"></button>
-      <button class="plano-btn plano-btn-sec" id="plano-mp-voltar" type="button">Agora não</button>`;
-    const campo = form.querySelector('#plano-mp-email');
-    const u = window.SeeAllAuth && SeeAllAuth.getCurrentUserSync ? SeeAllAuth.getCurrentUserSync() : null;
-    campo.value = mpEstado.emailDigitado != null ? mpEstado.emailDigitado : ((u && u.email) || '');
-    campo.addEventListener('input', ()=>{ mpEstado.emailDigitado = campo.value; });
-    const ir = form.querySelector('#plano-mp-continuar');
-    ir.textContent = mpEstado.ocupado ? 'Abrindo o Mercado Pago…' : 'Continuar no Mercado Pago';
-    ir.disabled = mpEstado.ocupado;
-    form.addEventListener('submit', e=>{ e.preventDefault(); mpAssinar(campo.value); });
-    form.querySelector('#plano-mp-voltar').addEventListener('click', ()=>{ mpEstado.formAberto = false; mpEstado.erro = ''; renderPlanos(); });
-    card.appendChild(form);
   }
   if(mpEstado.erro){
     const er = document.createElement('p');
@@ -19750,20 +19750,195 @@ function mpMontarCartao(card, ehAtual){
   if(info.textContent) card.appendChild(info);
 }
 
-async function mpAssinar(email){
-  email = String(email || '').trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ mpEstado.erro = mpMensagem('email'); renderPlanos(); return; }
-  if(mpEstado.ocupado) return;
-  mpEstado.ocupado = true; mpEstado.erro = ''; renderPlanos();
-  const r = await mpChamar({ acao:'assinar', email });
-  if(r.dados && r.dados.url && /^https:\/\/([a-z0-9-]+\.)*mercadopago\.com(\.br)?\//i.test(r.dados.url)){
-    try{ sessionStorage.setItem(MP_VOLTA_KEY, String(r.dados.assinatura || '')); }catch(e){}
-    location.href = r.dados.url;
+/* ---------- painel de pagamento (fora da lista de planos) ---------- */
+function mpAbrirPainel(){
+  if(!mpPainel.el){
+    const el = document.createElement('section');
+    el.className = 'plano-card plano-mp-painel';
+    el.id = 'plano-mp-painel';
+    el.setAttribute('aria-labelledby', 'plano-mp-titulo');
+    el.innerHTML = `
+      <div class="plano-topo"><span class="plano-nome" id="plano-mp-titulo">Pagar o SeeAll Plus</span></div>
+      <div class="plano-mp-formas" role="radiogroup" aria-label="Forma de pagamento">
+        <button type="button" class="plano-mp-forma" id="plano-mp-forma-cartao" role="radio" aria-checked="false" data-forma="cartao"><b>Cartão de crédito</b><span></span></button>
+        <button type="button" class="plano-mp-forma" id="plano-mp-forma-pix" role="radio" aria-checked="false" data-forma="pix"><b>Pix</b><span>Vale 30 dias. Sem renovação automática: no mês seguinte, você paga de novo se quiser.</span></button>
+      </div>
+      <div class="plano-mp-area" id="plano-mp-area"></div>
+      <p class="plano-nota plano-mp-erro" id="plano-mp-erro" role="alert" hidden></p>
+      <button type="button" class="plano-btn plano-btn-sec" id="plano-mp-fechar">Agora não</button>
+      <p class="plano-nota">Pagamento processado pelo Mercado Pago. O SeeAll não vê nem guarda os dados do seu cartão.</p>`;
+    el.querySelector('#plano-mp-forma-cartao span').textContent = `${planoPreco(PLANOS.plus)} por mês, renova sozinho. Cancele quando quiser, aqui em Planos.`;
+    el.querySelectorAll('.plano-mp-forma').forEach(b=> b.addEventListener('click', ()=> mpEscolherForma(b.dataset.forma)));
+    el.querySelector('#plano-mp-fechar').addEventListener('click', mpFecharPainel);
+    mpPainel.el = el;
+  }
+  document.getElementById('planos-lista').after(mpPainel.el);
+  mpPainel.el.hidden = false;
+  mpErroPainel('');
+  try{ mpPainel.el.scrollIntoView({ block:'start', behavior: seeallReduzMovimento() ? 'auto' : 'smooth' }); }catch(e){}
+  const b = document.getElementById('plano-mp-forma-cartao');
+  if(b) b.focus({ preventScroll:true });
+}
+function mpFecharPainel(){
+  mpLimparForma();
+  mpPainel.forma = null;
+  if(mpPainel.el){
+    mpPainel.el.hidden = true;
+    mpPainel.el.querySelectorAll('.plano-mp-forma').forEach(b=> b.setAttribute('aria-checked', 'false'));
+  }
+  const b = document.getElementById('plano-assinar-plus');
+  if(b) b.focus({ preventScroll:true });
+}
+function mpLimparForma(){
+  clearTimeout(mpPainel.timer); mpPainel.timer = null;
+  mpPainel.pix = null;
+  if(mpPainel.brick){ try{ mpPainel.brick.unmount(); }catch(e){} mpPainel.brick = null; }
+  const area = document.getElementById('plano-mp-area');
+  if(area) area.innerHTML = '';
+}
+function mpErroPainel(txt){
+  const e = document.getElementById('plano-mp-erro');
+  if(!e) return;
+  e.textContent = txt; e.hidden = !txt;
+}
+function mpEscolherForma(forma){
+  if(mpPainel.forma === forma) return;
+  mpLimparForma();
+  mpErroPainel('');
+  mpPainel.forma = forma;
+  mpPainel.el.querySelectorAll('.plano-mp-forma').forEach(b=> b.setAttribute('aria-checked', String(b.dataset.forma === forma)));
+  if(forma === 'cartao') mpMostrarCartao(); else mpMostrarPix();
+}
+
+// Script oficial do Mercado Pago, carregado uma vez e só quando a pessoa escolhe cartão.
+let mpSdkPromessa = null;
+function mpCarregarSdk(){
+  if(window.MercadoPago) return Promise.resolve();
+  if(mpSdkPromessa) return mpSdkPromessa;
+  mpSdkPromessa = new Promise((ok, falha)=>{
+    const sc = document.createElement('script');
+    sc.src = MP_SDK_URL;
+    sc.onload = ()=> window.MercadoPago ? ok() : falha(new Error('sdk'));
+    sc.onerror = ()=> falha(new Error('sdk'));
+    document.head.appendChild(sc);
+  }).catch(e=>{ mpSdkPromessa = null; throw e; });
+  return mpSdkPromessa;
+}
+
+async function mpMostrarCartao(){
+  const area = document.getElementById('plano-mp-area');
+  area.innerHTML = '<p class="plano-nota plano-mp-espera">Abrindo o formulário seguro do cartão…</p><div id="plano-mp-cartao"></div>';
+  let cfg = mpPainel.config;
+  if(!cfg){
+    const r = await mpChamar({ acao:'config' });
+    if(r.erro){ if(mpPainel.forma === 'cartao') mpErroPainel(mpMensagem(r.erro)); return; }
+    cfg = mpPainel.config = r.dados;
+  }
+  if(!cfg.public_key){ mpErroPainel(mpMensagem('sem_credenciais')); return; }
+  try{ await mpCarregarSdk(); }catch(e){ if(mpPainel.forma === 'cartao') mpErroPainel(mpMensagem('sdk')); return; }
+  if(mpPainel.forma !== 'cartao') return; // trocou de forma enquanto carregava
+  const u = window.SeeAllAuth && SeeAllAuth.getCurrentUserSync ? SeeAllAuth.getCurrentUserSync() : null;
+  try{
+    const mp = new window.MercadoPago(cfg.public_key, { locale:'pt-BR' });
+    const tema = document.documentElement.getAttribute('data-theme') === 'light' ? 'default' : 'dark';
+    mpPainel.brick = await mp.bricks().create('cardPayment', 'plano-mp-cartao', {
+      initialization: { amount: (cfg.valor_centavos || PLANOS.plus.precoCentavos) / 100, payer: { email: (u && u.email) || '' } },
+      customization: { paymentMethods: { maxInstallments:1, types: { excluded:['debit_card'] } }, visual: { style: { theme: tema } } },
+      callbacks: {
+        onReady: ()=>{ const e = area.querySelector('.plano-mp-espera'); if(e) e.remove(); },
+        onError: err=>{ console.warn('[SeeAll][mp] formulário do cartão:', err && (err.message || err.type)); },
+        onSubmit: dados=> mpPagarCartao(dados)
+      }
+    });
+  }catch(e){
+    mpErroPainel(mpMensagem('sdk'));
+  }
+}
+
+// onSubmit do formulário: devolve uma Promise (o formulário mostra "processando" até ela terminar).
+async function mpPagarCartao(dados){
+  mpErroPainel('');
+  const email = dados && dados.payer && dados.payer.email;
+  const r = await mpChamar({ acao:'cartao', token: dados && dados.token, email: email || undefined });
+  if(r.erro){
+    mpErroPainel(mpMensagem(r.erro));
+    throw new Error(r.erro); // o formulário volta a ficar editável
+  }
+  await mpConcluido('Assinatura confirmada. Bem-vindo ao SeeAll Plus!');
+}
+
+async function mpMostrarPix(){
+  const area = document.getElementById('plano-mp-area');
+  area.innerHTML = `<button type="button" class="plano-btn" id="plano-mp-gerar-pix">Gerar código Pix de ${planoPreco(PLANOS.plus)}</button>`;
+  area.querySelector('#plano-mp-gerar-pix').addEventListener('click', mpGerarPix);
+}
+async function mpGerarPix(){
+  const btn = document.getElementById('plano-mp-gerar-pix');
+  if(btn){ btn.disabled = true; btn.textContent = 'Gerando o código…'; }
+  mpErroPainel('');
+  const r = await mpChamar({ acao:'pix' });
+  if(mpPainel.forma !== 'pix') return;
+  if(r.erro){
+    mpErroPainel(mpMensagem(r.erro));
+    if(btn){ btn.disabled = false; btn.textContent = `Gerar código Pix de ${planoPreco(PLANOS.plus)}`; }
     return;
   }
-  mpEstado.ocupado = false;
-  mpEstado.erro = mpMensagem(r.erro || 'falhou');
-  renderPlanos();
+  mpPainel.pix = r.dados;
+  const area = document.getElementById('plano-mp-area');
+  area.innerHTML = `
+    <div class="plano-mp-pix">
+      <img class="plano-mp-qr" id="plano-mp-qr" alt="QR code do Pix" width="200" height="200" hidden>
+      <label class="plano-mp-rotulo" for="plano-mp-copia">Pix copia e cola</label>
+      <textarea class="plano-mp-campo plano-mp-copia" id="plano-mp-copia" rows="3" readonly></textarea>
+      <button type="button" class="plano-btn" id="plano-mp-copiar">Copiar código Pix</button>
+      <p class="plano-nota plano-mp-status" id="plano-mp-status" role="status">Aguardando o pagamento… O código vale 30 minutos.</p>
+    </div>`;
+  if(r.dados.qr_code_base64 && /^[A-Za-z0-9+/=]+$/.test(r.dados.qr_code_base64)){
+    const img = area.querySelector('#plano-mp-qr');
+    img.src = 'data:image/png;base64,' + r.dados.qr_code_base64;
+    img.hidden = false;
+  }
+  const campo = area.querySelector('#plano-mp-copia');
+  campo.value = r.dados.qr_code;
+  area.querySelector('#plano-mp-copiar').addEventListener('click', async ev=>{
+    const b = ev.currentTarget;
+    let ok = false;
+    try{ await navigator.clipboard.writeText(campo.value); ok = true; }
+    catch(e){ try{ campo.focus(); campo.select(); ok = document.execCommand('copy'); }catch(e2){} }
+    b.textContent = ok ? 'Código copiado' : 'Selecione o código e copie';
+    setTimeout(()=>{ b.textContent = 'Copiar código Pix'; }, 2500);
+  });
+  mpConferirPix(r.dados.pagamento, Date.now());
+}
+// Confere o Pix a cada 5 s enquanto o painel estiver aberto (até 35 min: o código vale 30).
+function mpConferirPix(id, inicio){
+  clearTimeout(mpPainel.timer);
+  mpPainel.timer = setTimeout(async ()=>{
+    if(!mpPainel.pix || mpPainel.pix.pagamento !== id || planosLayer.hidden) return;
+    const r = await mpChamar({ acao:'pix_status', pagamento:id });
+    if(!mpPainel.pix || mpPainel.pix.pagamento !== id) return;
+    const st = r.dados && r.dados.status;
+    if(st === 'approved'){ await mpConcluido('Pix recebido. Bem-vindo ao SeeAll Plus!'); return; }
+    const status = document.getElementById('plano-mp-status');
+    if(st === 'rejected' || st === 'cancelled' || Date.now() - inicio > 35 * 60 * 1000){
+      if(status) status.textContent = 'Este código Pix expirou. Gere um novo para pagar.';
+      const area = document.getElementById('plano-mp-area');
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'plano-btn plano-btn-sec'; b.textContent = 'Gerar novo código';
+      b.addEventListener('click', ()=>{ mpPainel.forma = null; mpEscolherForma('pix'); });
+      if(area) area.appendChild(b);
+      return;
+    }
+    mpConferirPix(id, inicio);
+  }, 5000);
+}
+
+async function mpConcluido(mensagem){
+  mpFecharPainel();
+  await mpCarregar();
+  await atualizarCotaNaTela(true);
+  if(typeof mostrarToastImportacao === 'function') mostrarToastImportacao(mensagem);
+  if(!planosLayer.hidden) renderPlanos();
 }
 
 async function mpCancelar(){
@@ -19786,41 +19961,6 @@ async function mpCancelar(){
   }
   if(!planosLayer.hidden) renderPlanos();
 }
-
-// Volta do Mercado Pago: guarda o id, limpa o endereço e confere assim que houver sessão.
-(function mpVoltaDoCheckout(){
-  if(mpNoAppNativo()) return;
-  try{
-    const u = new URL(location.href);
-    const id = u.searchParams.get('preapproval_id');
-    if(id && /^[0-9A-Za-z]{1,64}$/.test(id)) sessionStorage.setItem(MP_VOLTA_KEY, id);
-    if(u.searchParams.has('preapproval_id')){
-      u.searchParams.delete('preapproval_id');
-      history.replaceState(history.state, '', u.pathname + u.search + u.hash);
-    }
-  }catch(e){}
-  let tentativas = 0;
-  async function conferir(){
-    let id = null;
-    try{ id = sessionStorage.getItem(MP_VOLTA_KEY); }catch(e){}
-    if(id === null) return;
-    const logado = typeof getCurrentUserId === 'function' && getCurrentUserId() && window.seeallSupabaseCliente;
-    if(!logado){ if(++tentativas < 120) setTimeout(conferir, 1000); return; } // espera o login (até 2 min)
-    const r = await mpChamar(id ? { acao:'conferir', assinatura:id } : { acao:'conferir' });
-    if(r.erro === 'sem_conexao'){ if(++tentativas < 120) setTimeout(conferir, 3000); return; }
-    try{ sessionStorage.removeItem(MP_VOLTA_KEY); }catch(e){}
-    await mpCarregar();
-    await atualizarCotaNaTela(true);
-    const ativa = mpEstado.minhas.some(a => a.status === 'authorized');
-    if(typeof mostrarToastImportacao === 'function'){
-      mostrarToastImportacao(ativa && seeallTemPlus()
-        ? 'Assinatura confirmada. Bem-vindo ao SeeAll Plus!'
-        : 'Recebemos sua volta do Mercado Pago. Assim que o pagamento for aprovado, o Plus é liberado.');
-    }
-    if(!planosLayer.hidden) renderPlanos();
-  }
-  setTimeout(conferir, 0);
-})();
 /* =========================================================
    TUTORIAL — 4 passos sobre elementos reais do Início
    ========================================================= */
