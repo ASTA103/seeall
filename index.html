@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SeeAll: controle de gastos</title>
 <meta name="description" content="SeeAll: seu dinheiro explicado de forma simples. Importe o extrato do banco e veja quanto entrou, quanto saiu e para onde o dinheiro foi. Grátis, no Android, no iPhone e no computador.">
-<meta name="theme-color" content="#0F1218">
+<meta name="theme-color" content="#111111">
 <link rel="icon" href="app/icons/icon-192.png">
 <link rel="apple-touch-icon" href="app/icons/icon-192.png">
-<!-- (2.3.47) Site no visual do app (paleta Neblina). Sem script nenhum: a CSP das páginas públicas
+<!-- (2.3.47) Site no visual do app (paleta padrão: preto e laranja). Sem script nenhum: a CSP das páginas públicas
      não permite. "Instalar" leva a app/?instalar=1, onde o próprio app pede a instalação ao navegador. -->
 <style>
   :root{
-    --bg:#0F1218; --bg-dark:#181D26; --card:#212836; --track:#353D4D;
-    --texto:#F5F2EA; --dim:#A9B0BC; --faint:#7A8292; --linha:rgba(245,242,234,.08);
-    --acento:#7C93AE; --acento-claro:#A5B6CA; --entrou:#B8AD9B; --entrou-claro:#D2C9BB; --sobre-acento:#0F1218;
+    --bg:#111111; --bg-dark:#1C1C1F; --card:#242427; --track:#3A3A3E;
+    --texto:#F5F2EA; --dim:#A7A7A7; --faint:#8A8A8A; --linha:rgba(245,242,234,.08);
+    --acento:#D96B2B; --acento-claro:#E8916B; --entrou:#F5F2EA; --entrou-claro:#A7A7A7; --sobre-acento:#111111;
     --raio:20px; --nav-h:76px; --lateral:240px;
   }
   *{ box-sizing:border-box; }
@@ -60,10 +60,10 @@
     border-radius:16px; font-weight:700; font-size:15.5px; text-decoration:none; border:1px solid transparent;
   }
   .btn svg{ width:20px; height:20px; flex-shrink:0; }
-  .btn-principal{ background:var(--acento); color:var(--sobre-acento); box-shadow:0 10px 30px rgba(124,147,174,.28); }
+  .btn-principal{ background:var(--acento); color:var(--sobre-acento); box-shadow:0 10px 30px rgba(217,107,43,.28); }
   .btn-principal:hover{ background:var(--acento-claro); }
   .btn-sec{ background:var(--card); border-color:var(--linha); }
-  .btn-sec:hover{ border-color:rgba(165,182,202,.4); }
+  .btn-sec:hover{ border-color:rgba(232,145,107,.4); }
   .selos{ display:flex; flex-wrap:wrap; gap:8px 18px; margin:18px 0 0; padding:0; list-style:none; color:var(--faint); font-size:13px; }
   .selos li{ display:flex; align-items:center; gap:6px; }
   .selos svg{ width:15px; height:15px; color:var(--acento); }
@@ -91,7 +91,7 @@
   .t-barra i{ display:block; height:100%; border-radius:6px; background:linear-gradient(90deg, var(--acento), var(--acento-claro)); }
   .t-barra.ent i{ background:linear-gradient(90deg, var(--entrou), var(--entrou-claro)); }
   .t-insight{ margin:16px 12px 0; background:var(--card); border-radius:16px; padding:12px; display:flex; gap:10px; align-items:center; font-size:11.5px; color:var(--dim); }
-  .t-insight .ic{ width:34px; height:34px; border-radius:10px; background:rgba(124,147,174,.16); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .t-insight .ic{ width:34px; height:34px; border-radius:10px; background:rgba(217,107,43,.16); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .t-insight .ic svg{ width:16px; height:16px; }
   .t-insight b{ color:var(--texto); }
   .t-tx-h{ display:flex; justify-content:space-between; align-items:baseline; padding:16px 18px 2px; }
@@ -116,7 +116,7 @@
   /* ---------- recursos ---------- */
   .grade{ display:grid; gap:12px; margin-top:24px; }
   .card{ background:var(--card); border-radius:var(--raio); padding:20px; border:1px solid var(--linha); }
-  .card .ic{ width:42px; height:42px; border-radius:12px; background:rgba(124,147,174,.14); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
+  .card .ic{ width:42px; height:42px; border-radius:12px; background:rgba(217,107,43,.14); color:var(--acento-claro); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
   .card .ic svg{ width:21px; height:21px; }
   .card h3{ margin:0 0 6px; font-size:16.5px; }
   .card p{ margin:0; color:var(--dim); font-size:14.5px; }
@@ -131,14 +131,27 @@
   /* ---------- planos ---------- */
   .plano .topo-plano{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
   .plano h3{ margin:0; }
-  .selo{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--acento-claro); background:rgba(124,147,174,.16); border-radius:20px; padding:4px 9px; }
+  .selo{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--acento-claro); background:rgba(217,107,43,.16); border-radius:20px; padding:4px 9px; }
   .preco{ margin:10px 0 14px; color:var(--dim); font-size:14px; }
   .preco b{ font-size:32px; color:var(--texto); margin-right:2px; }
   .lista{ list-style:none; margin:0; padding:0; display:grid; gap:9px; font-size:14.5px; }
   .lista li{ display:flex; gap:10px; align-items:flex-start; }
   .lista svg{ width:16px; height:16px; color:var(--acento); flex-shrink:0; margin-top:3px; }
-  .plano.destaque{ border-color:rgba(124,147,174,.5); background:linear-gradient(180deg, rgba(124,147,174,.12), var(--card) 60%); }
+  .plano.destaque{ border-color:rgba(217,107,43,.5); background:linear-gradient(180deg, rgba(217,107,43,.12), var(--card) 60%); }
   .btn-off{ background:var(--track); color:var(--dim); cursor:default; }
+  /* vitrine do Plus */
+  .vitrine{ margin-top:18px; padding-top:16px; border-top:1px solid var(--linha); }
+  .vitrine-titulo{ margin:0 0 10px; font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+  .vitrine-titulo + .paletas{ margin-bottom:16px; }
+  .paletas{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .paletas li{ background:var(--bg-dark); border:1px solid var(--linha); border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .paletas .trio{ display:flex; margin-bottom:6px; }
+  .paletas .trio i{ width:18px; height:18px; border-radius:50%; border:2px solid var(--bg-dark); margin-left:-5px; }
+  .paletas .trio i:first-child{ margin-left:0; }
+  .paletas b{ font-size:13.5px; }
+  .paletas small{ font-size:11.5px; color:var(--dim); line-height:1.35; }
+  .nome-exemplo{ margin:0; font-size:20px; color:var(--dim); }
+  .brilho{ color:var(--acento-claro); font-weight:700; text-shadow:0 0 10px rgba(217,107,43,.75), 0 0 22px rgba(217,107,43,.4); }
 
   /* ---------- privacidade e rodapé ---------- */
   .texto p{ color:var(--dim); max-width:720px; }
@@ -153,7 +166,7 @@
   /* ---------- barra de navegação: a mesma do app (embaixo no celular, lateral no computador) ---------- */
   .nav{
     position:fixed; left:0; right:0; bottom:0; z-index:10; height:calc(var(--nav-h) + env(safe-area-inset-bottom));
-    padding:0 6px env(safe-area-inset-bottom); background:rgba(24,29,38,.94); border-top:1px solid var(--linha);
+    padding:0 6px env(safe-area-inset-bottom); background:rgba(28,28,31,.94); border-top:1px solid var(--linha);
     border-radius:24px 24px 0 0; display:flex; justify-content:space-around; align-items:center;
     -webkit-backdrop-filter:blur(16px); backdrop-filter:blur(16px);
   }
@@ -161,7 +174,7 @@
   .nav a svg{ width:22px; height:22px; }
   .nav a:hover{ color:var(--texto); }
   .nav .nav-marca{ display:none; }
-  .nav .centro{ flex:0 0 auto; width:66px; height:66px; min-height:0; border-radius:50%; background:var(--acento); color:var(--sobre-acento); margin-top:-34px; border:6px solid var(--bg); box-shadow:0 8px 24px rgba(124,147,174,.35); }
+  .nav .centro{ flex:0 0 auto; width:66px; height:66px; min-height:0; border-radius:50%; background:var(--acento); color:var(--sobre-acento); margin-top:-34px; border:6px solid var(--bg); box-shadow:0 8px 24px rgba(217,107,43,.35); }
   .nav .centro span{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
   .nav .centro:hover{ color:var(--sobre-acento); background:var(--acento-claro); }
 
@@ -376,6 +389,18 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Nome com brilho</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Ajuda a manter o SeeAll sem anúncios</li>
         </ul>
+        <!-- (2.3.48) vitrine do Plus: as sugestões do desenvolvedor e o nome com brilho, como no app -->
+        <div class="vitrine" aria-label="Exemplos do SeeAll Plus">
+          <p class="vitrine-titulo">Sugestões do desenvolvedor</p>
+          <ul class="paletas">
+            <li><span class="trio" aria-hidden="true"><i style="background:#D9472F"></i><i style="background:#7B8B3A"></i><i style="background:#EEE8DA"></i></span><b>Turaco</b><small>Vermelho, oliva e creme</small></li>
+            <li><span class="trio" aria-hidden="true"><i style="background:#B4541F"></i><i style="background:#4C6585"></i><i style="background:#2F3239"></i></span><b>Martim-pescador</b><small>Ferrugem, ardósia e grafite</small></li>
+            <li><span class="trio" aria-hidden="true"><i style="background:#14A3A8"></i><i style="background:#B964A1"></i><i style="background:#B9824C"></i></span><b>Rolieiro</b><small>Turquesa, orquídea e caramelo</small></li>
+            <li><span class="trio" aria-hidden="true"><i style="background:#6F849B"></i><i style="background:#9D9283"></i><i style="background:#3D4A5E"></i></span><b>Neblina</b><small>Azul-cinza, taupe e azul-noite</small></li>
+          </ul>
+          <p class="vitrine-titulo">Nome com brilho</p>
+          <p class="nome-exemplo">Olá, <span class="brilho">Ana</span>.</p>
+        </div>
         <span class="btn btn-off" aria-disabled="true">Em breve</span>
       </div>
     </div>
