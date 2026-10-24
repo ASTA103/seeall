@@ -3559,7 +3559,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         try{
           const { data:ativas, error:eAss } = await cliente.from('assinaturas_mp').select('assinatura_id').in('status', ['authorized', 'paused']).limit(1);
           if(!eAss && Array.isArray(ativas) && ativas.length){
-            const { data:c, error:eCan } = await cliente.functions.invoke('mp-pagamento', { body:{ acao:'cancelar' } });
+            const { data:c, error:eCan } = await cliente.functions.invoke('mp-pagamentos', { body:{ acao:'cancelar' } });
             if(eCan || !c || !c.ok) return falha('subscription_cancel_failed');
           }
         }catch(e){ return falha('subscription_cancel_failed'); }
@@ -19477,7 +19477,7 @@ document.getElementById('tx-modal-cat-btn').addEventListener('click', ()=>{ if(m
    houver pagamento (Google Play Billing no Android), a compra entra aqui.
    Abre por Perfil › Assinatura, Configurações › Assinatura e "Ver planos" na importação.
    (2.3.49) Assinatura mensal pelo Mercado Pago, só no site/PWA (no app Android o Google
-   Play exige o Billing dele): Edge Function mp-pagamento (ferramentas/MERCADO-PAGO.md).
+   Play exige o Billing dele): Edge Function mp-pagamento, publicada no endereço mp-pagamentos.
    O botão só aparece com planos.a_venda=true no servidor. Quem libera o Plus é o servidor.
    ========================================================= */
 const planosLayer = document.getElementById('planos-layer');
@@ -19652,7 +19652,7 @@ async function mpChamar(corpo){
   if(!cli || !cli.functions || typeof cli.functions.invoke !== 'function') return { erro:'falhou' };
   if(navigator.onLine === false) return { erro:'sem_conexao' };
   try{
-    const { data, error } = await cli.functions.invoke('mp-pagamento', { body: corpo });
+    const { data, error } = await cli.functions.invoke('mp-pagamentos', { body: corpo });
     if(!error) return data && data.ok ? { dados:data } : { erro:(data && data.motivo) || 'falhou' };
     // resposta com erro HTTP: o corpo traz o motivo
     let motivo = 'falhou';
